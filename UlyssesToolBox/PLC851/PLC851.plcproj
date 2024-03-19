@@ -22,25 +22,37 @@
     <ProjectVersion>0.0.0.1</ProjectVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="MAIN.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="PlcTask.TcTTO">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="T04Connectivity\FB_TcpSendReceive.TcPOU">
+    <Compile Include="T04Connectivity\TCPIP\FB_TcpSendReceive.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="T04Connectivity\FB_TcpSendReceiving.TcPOU">
+    <Compile Include="T04Connectivity\TCPIP\FB_TcpSendReceiving.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="T05Motion\E_MoveMode.TcDUT">
+    <Compile Include="T04Connectivity\TCPIP\SimpleClient\SimpleTcpClient.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="T05Motion\E_SimpleAxisState.TcDUT">
+    <Compile Include="T04Connectivity\TCPIP\SimpleClient\stConnState.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="T05Motion\FB_SimpleAxis.TcPOU">
+    <Compile Include="T04Connectivity\TCPIP\SimpleClient\stSktPara.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="T05Motion\ST_AxisSettings.TcDUT">
+    <Compile Include="T05Motion\SimpleAxis\E_MoveMode.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="T05Motion\SimpleAxis\E_SimpleAxisState.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="T05Motion\SimpleAxis\FB_SimpleAxis.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="T05Motion\SimpleAxis\ST_AxisSettings.TcDUT">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
@@ -71,7 +83,10 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="T04Connectivity" />
+    <Folder Include="T04Connectivity\TCPIP" />
+    <Folder Include="T04Connectivity\TCPIP\SimpleClient" />
     <Folder Include="T05Motion" />
+    <Folder Include="T05Motion\SimpleAxis" />
   </ItemGroup>
   <ProjectExtensions>
     <PlcProjectOptions>

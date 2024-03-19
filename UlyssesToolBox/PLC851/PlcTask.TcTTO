@@ -4,6 +4,9 @@
     <!--CycleTime in micro seconds.-->
     <CycleTime>10000</CycleTime>
     <Priority>20</Priority>
+    <PouCall>
+      <Name>MAIN</Name>
+    </PouCall>
     <TaskFBGuid>{2116cef5-ea37-47c6-a9a6-27b8eb293c1b}</TaskFBGuid>
     <Fb_init>{0ca9ab6f-9234-430e-b300-917c71619734}</Fb_init>
     <Fb_exit>{c367f9d4-96b9-47c2-9540-52146c0b1613}</Fb_exit>

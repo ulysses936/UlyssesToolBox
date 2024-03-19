@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="stConnState" Id="{6d01ad7a-eca1-4b04-9f4a-4eaaa214b05a}">
+    <Declaration><![CDATA[TYPE stConnState :
+STRUCT
+	bConnected : BOOL;
+	hSocket : T_HSOCKET;
+	eState : E_SocketConnectionState;
+	bError : BOOL;
+	nErrId : UDINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>
