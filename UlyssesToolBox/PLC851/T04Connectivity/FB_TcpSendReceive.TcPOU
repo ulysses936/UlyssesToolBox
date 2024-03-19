@@ -1,0 +1,267 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_TcpSendReceive" Id="{9921536c-a6a0-4e05-b49f-dbc1578dcb2d}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_TcpSendReceive
+VAR_INPUT
+	bEnable : BOOL; //启用
+	bReset : BOOL;
+	sRemoteIp : T_IPv4Addr;
+	nRemotePort : UDINT;
+	bExecute : BOOL;
+	pSendData : POINTER TO BYTE;
+	nSendSize : UDINT;
+	pRecvData : POINTER TO BYTE;
+	nRecvSize : UDINT;
+END_VAR
+VAR_OUTPUT
+	bConnected : BOOL;
+	bBusy : BOOL;
+	bError : BOOL;
+	nRecvByte : UDINT;
+END_VAR
+VAR
+	//功能块调用
+	fbConnect : FB_SocketConnect;
+	fbClose : FB_SocketClose;
+	fbSend : FB_SocketSend;
+	fbRecv : FB_SocketReceive;
+	
+	//状态流转
+	stepSendRecv :UDINT;
+	
+	//连接部分
+	tonReconnect : TON;
+	hSocket : T_HSOCKET;
+	
+	//数据收发
+	rTrigExecute : R_TRIG;
+	tempData : ARRAY[0..255] OF BYTE;
+	tonRecvTimeout : TON;
+	_AlreadyRecvdData: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//主逻辑
+_CyclicLogic();]]></ST>
+    </Implementation>
+    <Method Name="_CyclicLogic" Id="{e46623ab-cda7-4290-9b7e-1a3c4d693dce}">
+      <Declaration><![CDATA[METHOD _CyclicLogic : BOOL
+VAR_INPUT
+END_VAR
+
+VAR
+	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[rTrigExecute(CLK:= bExecute, Q=> );
+tonReconnect(IN:= , PT:= T#3S, Q=> , ET=> );
+tonRecvTimeout(IN:= , PT:= T#3S, Q=> , ET=> );
+CASE stepSendRecv OF
+	0: //初始状态，等待TCP连接
+	fbConnect(bExecute:= FALSE);
+	tonReconnect.IN := FALSE;
+	IF bEnable AND sRemoteIp <> '' AND nRemotePort <> 0 THEN
+		stepSendRecv := 10;
+	END_IF
+
+	10: //连接中
+	fbConnect(sRemoteHost:= sRemoteIp, nRemotePort:= nRemotePort, bExecute:= TRUE);
+	IF fbConnect.bBusy THEN
+		;
+	ELSE
+		IF NOT fbConnect.bError AND (fbConnect.hSocket.handle <> 0) THEN
+			hSocket := fbConnect.hSocket;
+			stepSendRecv := 20;
+		ELSE
+			stepSendRecv := 12;
+		END_IF
+	END_IF
+
+	12: //重连等待
+	tonReconnect.IN := TRUE;
+	IF tonReconnect.Q THEN
+		stepSendRecv := 0;
+		tonReconnect.IN := FALSE;
+	END_IF
+
+	20: //连接完成
+	fbSend(bExecute:= FALSE);
+	fbRecv(bExecute:= FALSE);
+	tonRecvTimeout.IN := FALSE;
+	IF rTrigExecute.Q THEN
+		stepSendRecv := 32;
+		MEMSET(destAddr:= ADR(pRecvData), fillByte:= 0, n:= nRecvSize);
+	END_IF
+	
+	30://如果触发重收，重收之前的复位
+	fbRecv(bExecute:= FALSE);
+	stepSendRecv := 32;
+	
+	32: //先接收，直到收不到为止，防止之前的报文影响
+	fbRecv(hSocket:= hSocket, cbLen:= SIZEOF(tempData), pDest:= ADR(tempData), bExecute:= TRUE);
+	IF fbRecv.bBusy THEN
+		;
+	ELSE
+		IF fbRecv.bError  THEN
+			stepSendRecv := 20; //如果报错，直接取消本次流程，跳到发送前
+		ELSE
+			IF fbRecv.nRecBytes = 0 THEN
+				stepSendRecv := 42; //如果确定之前没有数据接收了，就跳到下一步，开始发送流程
+			ELSE
+				stepSendRecv := 30; //否则再次尝试接收，直到再也收不到数据
+			END_IF
+		END_IF
+	END_IF
+	
+	40: //发送，这一步是给重发准备的，目前用不上
+	fbSend(bExecute:= FALSE);
+	stepSendRecv := 42;
+	
+	42: //发送
+	fbRecv(bExecute:= FALSE);
+	fbSend(hSocket:= hSocket, cbLen:= nSendSize, pSrc:= pSendData, bExecute:= TRUE);
+	IF fbSend.bBusy THEN
+		;
+	ELSE
+		IF fbSend.bError THEN
+			stepSendRecv := 20; //如果报错，直接取消本次流程，跳到发送前
+		ELSE
+			stepSendRecv := 52;
+		END_IF
+	END_IF
+	
+	50://如果触发重收，重收之前的复位
+	fbRecv(bExecute:= FALSE);
+	stepSendRecv := 52;
+	
+	52: //接收
+	fbSend(bExecute:= FALSE);
+	fbRecv(hSocket:= hSocket, cbLen:= nRecvSize, pDest:= pRecvData, bExecute:= TRUE);
+	IF fbRecv.bBusy THEN
+		;
+	ELSE
+		IF fbRecv.bError THEN
+			stepSendRecv := 20; //如果报错，直接取消本次流程，跳到发送前
+		ELSE
+			
+			IF fbRecv.nRecBytes <>0 THEN
+				_AlreadyRecvdData := TRUE;
+				stepSendRecv := 50; //收到数据也进入重收
+			ELSE
+				tonRecvTimeout.IN := TRUE;
+				IF _AlreadyRecvdData THEN
+					stepSendRecv := 20; //收到数据，就结束流程
+					_AlreadyRecvdData := FALSE;
+				ELSIF tonRecvTimeout.Q THEN
+					stepSendRecv := 20; //如果没收到数据，并且到达了超时时间，就取消流程
+				ELSE
+					stepSendRecv := 50; //如果没收到数据，且未到超时时间，就进入重收流程
+				END_IF
+			END_IF
+			
+		END_IF
+	END_IF
+	
+	
+	
+END_CASE
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_TcpSendReceive">
+      <LineId Id="40" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpSendReceive._CyclicLogic">
+      <LineId Id="43" Count="0" />
+      <LineId Id="136" Count="0" />
+      <LineId Id="127" Count="0" />
+      <LineId Id="5" Count="1" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="29" Count="2" />
+      <LineId Id="14" Count="2" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="162" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="10" Count="1" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="44" Count="1" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="59" Count="1" />
+      <LineId Id="134" Count="0" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="55" Count="0" />
+      <LineId Id="165" Count="0" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="69" Count="1" />
+      <LineId Id="68" Count="0" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="63" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="66" Count="1" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="76" Count="1" />
+      <LineId Id="82" Count="1" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="73" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="75" Count="0" />
+      <LineId Id="84" Count="3" />
+      <LineId Id="106" Count="0" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="90" Count="0" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="97" Count="2" />
+      <LineId Id="101" Count="1" />
+      <LineId Id="100" Count="0" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="88" Count="1" />
+      <LineId Id="103" Count="0" />
+      <LineId Id="107" Count="0" />
+      <LineId Id="109" Count="0" />
+      <LineId Id="108" Count="0" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="105" Count="0" />
+      <LineId Id="111" Count="0" />
+      <LineId Id="113" Count="2" />
+      <LineId Id="117" Count="0" />
+      <LineId Id="151" Count="0" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="138" Count="0" />
+      <LineId Id="164" Count="0" />
+      <LineId Id="121" Count="0" />
+      <LineId Id="128" Count="0" />
+      <LineId Id="153" Count="1" />
+      <LineId Id="163" Count="0" />
+      <LineId Id="156" Count="1" />
+      <LineId Id="159" Count="1" />
+      <LineId Id="155" Count="0" />
+      <LineId Id="123" Count="0" />
+      <LineId Id="161" Count="0" />
+      <LineId Id="116" Count="0" />
+      <LineId Id="112" Count="0" />
+      <LineId Id="124" Count="2" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="18" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_AxisSettings" Id="{d6e7322b-55b7-4d02-9339-17ac05a91f18}">
+    <Declaration><![CDATA[TYPE ST_AxisSettings :
+STRUCT
+	MovePosAcc : LREAL;
+	MovePosDec : LREAL;
+	MovePosJerk : LREAL;
+	
+	MoveVeloAcc : LREAL;
+	MoveVeloDec : LREAL;
+	MoveVeloJerk : LREAL;
+	MoveVeloDirection : MC_Direction := MC_Positive_Direction;
+	
+	JogAcc : LREAL;
+	JogDec : LREAL;
+	JogJerk : LREAL;
+	
+	HomeVelo : LREAL := 10;
+	HomeAcc : LREAL;
+	HomeDec : LREAL;
+	HomeJerk : LREAL;
+	HomeSetpos : LREAL := 0;
+	HomeSignal : BOOL;
+	HomePosLimit : BOOL;
+	HomeNegLimit : BOOL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

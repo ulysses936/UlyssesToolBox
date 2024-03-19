@@ -1,0 +1,608 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_SimpleAxis" Id="{badc5cdd-7646-473b-8a37-1b0607faa584}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_SimpleAxis
+VAR_INPUT
+	bPower : BOOL;
+	bMovePos : BOOL;
+	bMoveVelo : BOOL;
+	eMoveMode : E_MoveMode;
+	TargetPostion : LREAL;
+	TargetVelocity : LREAL;
+	bJogFor : BOOL;
+	bJogBack : BOOL;
+	JogSpeed : LREAL;
+	bHome : BOOL;
+	bReset : BOOL;
+	bStop : BOOL;
+	fbAxisSettings : ST_AxisSettings;
+END_VAR
+VAR_OUTPUT
+	(* AxisData *)
+	ActPos : LREAL;
+	ActVelo : LREAL;
+	ModPos : LREAL;
+	(* AxisState *)
+	NotMoving : BOOL;
+	Accelerating : BOOL;
+	Moving : BOOL;
+	Decelerating : BOOL;
+	(* ControlState *)
+	PowerOn : BOOL;
+	Standstill : BOOL;
+	AxisErrID : UDINT;
+
+	(* Fb *)
+	bBusy : BOOL;
+	bDone : BOOL;
+	bAborted : BOOL;
+	bError : BOOL;
+	nErrID : UDINT;
+END_VAR
+VAR
+	(* Axis *)
+	Axis : AXIS_REF;
+
+	
+	(* fbCall *)
+	mcPower : MC_Power;
+	mcMoveAbs : MC_MoveAbsolute;
+	mcMoveAbs2 : MC_MoveAbsolute;
+	mcMoveMod : MC_MoveModulo;
+	mcMoveRel : MC_MoveRelative;
+	mcMoveVel : MC_MoveVelocity;
+	mcJog : MC_Jog;
+	mcReset : MC_Reset;
+	mcStop : MC_Stop;
+
+	mcStepAbsSwh : MC_StepAbsoluteSwitch;
+	mcFinishHome : MC_FinishHoming;
+	
+	(* StateMachine *)
+	eFbState : E_SimpleAxisState;
+	rTrigCommand : R_TRIG;
+	(* MoveAbs *)
+
+	ParaPosInPos : LREAL;
+	ParaVeloInPos : LREAL;
+	(* MoveVelo *)
+	ParaVeloInVelo : LREAL;
+	(* Jog *)
+	ParaJogSpeed : LREAL;
+	(* Home *)
+	HomingPara : MC_HomingParameter;
+	Homed : BOOL;
+	HomeRefSignal: MC_Ref_Signal_Ref;
+	HomeOptions: ST_Home_Options4;
+	HomeDirection: MC_Home_Direction;
+	HomeSwhMode: MC_Switch_Mode;
+	
+	FinishHomeOptions: ST_Home_Options2;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[_fbCall();
+
+	(* AxisData *)
+ActPos := Axis.NcToPlc.ActPos;
+ActVelo := Axis.NcToPlc.ActVelo;
+ModPos := Axis.NcToPlc.ModuloActPos;
+
+	(* AxisState *)
+NotMoving := Axis.Status.NotMoving;
+Accelerating := Axis.Status.Accelerating;
+Moving := Axis.Status.HasJob;
+Decelerating := Axis.Status.Decelerating;
+
+	(* ControlState *)
+Standstill := Axis.Status.StandStill;
+AxisErrID := Axis.NcToPlc.ErrorCode;
+
+_CyclicLogic();
+]]></ST>
+    </Implementation>
+    <Method Name="_CyclicLogic" Id="{cbccfb47-7d1f-4494-a0f0-5ec8ee1f8574}">
+      <Declaration><![CDATA[METHOD PRIVATE _CyclicLogic : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[rTrigCommand(CLK:= bHome OR bMovePos OR bMoveVelo OR (bJogFor OR bJogBack), Q=> );
+
+CASE eFbState OF
+E_SimpleAxisState.Waiting:
+	bBusy := FALSE;
+	bError := FALSE;
+	IF rTrigCommand.Q AND mcPower.Status THEN
+		bBusy := TRUE;
+		bDone := FALSE;
+		bAborted := FALSE;
+		bError := FALSE;
+		nErrID := 0;
+		IF bhome AND NOT Homed THEN
+			eFbState := E_SimpleAxisState.BeforeHoming;
+		ELSIF bMoveVelo AND Homed THEN
+			eFbState := E_SimpleAxisState.BeforeMoveVelo;
+		ELSIF bMovePos AND Homed THEN
+			eFbState := E_SimpleAxisState.BeforeMovePos;
+		ELSIF (bJogFor OR bJogBack) AND Homed THEN
+			eFbState := E_SimpleAxisState.BeforeJog;
+		END_IF
+	END_IF
+	
+E_SimpleAxisState.BeforeJog:
+	ParaJogSpeed := JogSpeed;
+	eFbState := E_SimpleAxisState.Joging;
+	
+E_SimpleAxisState.Joging:
+	mcJog.JogForward := bJogFor;
+	mcJog.JogBackwards := bJogBack;
+	mcJog.Velocity := ParaJogSpeed;
+	mcJog(Axis:= Axis);
+	IF NOT bJogFor AND NOT bJogBack THEN
+		mcJog(Axis:= Axis, JogForward:= FALSE, JogBackwards:= FALSE);
+		eFbState := E_SimpleAxisState.JogDone;
+	ELSIF mcJog.CommandAborted THEN
+		mcJog(Axis:= Axis, JogForward:= FALSE, JogBackwards:= FALSE);
+		eFbState := E_SimpleAxisState.Aborted;
+	ELSIF mcMoveAbs.Error THEN
+		bError := TRUE;
+		nErrID := mcMoveAbs.ErrorID;
+		mcJog(Axis:= Axis, JogForward:= FALSE, JogBackwards:= FALSE);
+		eFbState := E_SimpleAxisState.Error;
+	END_IF
+	
+E_SimpleAxisState.JogDone:
+	bDone := TRUE;
+	IF Axis.Status.StandStill THEN
+		eFbState := E_SimpleAxisState.Waiting;
+	END_IF
+
+E_SimpleAxisState.BeforeMovePos:
+	ParaPosInPos := TargetPostion;
+	ParaVeloInPos := TargetVelocity;
+	CASE eMoveMode OF
+	E_MoveMode.NotMove:
+		eFbState := E_SimpleAxisState.Waiting;
+		
+	E_MoveMode.MoveAbs:
+		eFbState := E_SimpleAxisState.MovingAbs;
+		
+	E_MoveMode.MoveMod:
+		eFbState := E_SimpleAxisState.MovingMod;
+		
+	E_MoveMode.MoveRel:
+		eFbState := E_SimpleAxisState.MovingRel;
+	
+	END_CASE
+
+E_SimpleAxisState.MovingAbs:
+	mcMoveAbs.Position := ParaPosInPos;
+	mcMoveAbs.Velocity := ParaVeloInPos;
+	mcMoveAbs(Axis := Axis, Execute := TRUE);
+	IF mcMoveAbs.Done  THEN
+		mcMoveAbs(Axis := Axis, Execute := FALSE);
+		eFbState := E_SimpleAxisState.MovePosDone;
+	ELSIF mcMoveAbs.CommandAborted THEN
+		mcMoveAbs(Axis := Axis, Execute := FALSE);
+		eFbState := E_SimpleAxisState.Aborted;
+	ELSIF mcMoveAbs.Error THEN
+		bError := TRUE;
+		nErrID := mcMoveAbs.ErrorID;
+		mcMoveAbs(Axis := Axis, Execute := FALSE);
+		eFbState := E_SimpleAxisState.Error;
+	END_IF
+	
+
+E_SimpleAxisState.MovingMod:
+	;
+
+E_SimpleAxisState.MovingRel:
+	;
+E_SimpleAxisState.MovePosDone:
+	bDone := TRUE;
+	IF Axis.Status.StandStill THEN
+		eFbState := E_SimpleAxisState.Waiting;
+	END_IF
+	
+E_SimpleAxisState.BeforeMoveVelo:
+	ParaVeloInVelo := TargetVelocity;
+	eFbState := E_SimpleAxisState.MovingVelo;
+
+E_SimpleAxisState.MovingVelo:
+	mcMoveVel.Velocity := ParaVeloInVelo;
+	mcMoveVel(Axis := Axis, Execute := TRUE);
+	IF NOT bMoveVelo THEN
+		mcMoveVel(Axis := Axis, Execute := FALSE);
+		eFbState := E_SimpleAxisState.MoveVeloStop;
+	ELSIF mcMoveVel.CommandAborted THEN
+		mcMoveVel(Axis := Axis, Execute := FALSE);
+		eFbState := E_SimpleAxisState.Aborted;
+	ELSIF mcMoveVel.Error THEN
+		bError := TRUE;
+		nErrID := mcMoveVel.ErrorID;
+		mcMoveVel(Axis := Axis, Execute := FALSE);
+		eFbState := E_SimpleAxisState.Error;
+	END_IF
+E_SimpleAxisState.MoveVeloStop:
+	mcStop(Axis := Axis, Execute := TRUE);
+	IF mcStop.Done AND Axis.Status.HasBeenStopped THEN
+		eFbState := E_SimpleAxisState.MoveVeloDone;
+	END_IF
+	
+E_SimpleAxisState.MoveVeloDone:
+	bDone := TRUE;
+	IF Axis.Status.StandStill THEN
+		eFbState := E_SimpleAxisState.Waiting;
+	END_IF
+
+	
+E_SimpleAxisState.BeforeHoming:
+	eFbState := E_SimpleAxisState.Homing;
+	
+E_SimpleAxisState.Homing:
+	mcStepAbsSwh(Axis := Axis, Parameter := HomingPara, Execute := TRUE);
+	IF mcStepAbsSwh.Done  THEN
+		mcStepAbsSwh(Axis := Axis, Parameter := HomingPara, Execute := FALSE);
+		eFbState := E_SimpleAxisState.FinishHoming;
+	ELSIF mcStepAbsSwh.CommandAborted THEN
+		mcStepAbsSwh(Axis := Axis, Parameter := HomingPara, Execute := FALSE);
+		eFbState := E_SimpleAxisState.Aborted;
+	ELSIF mcStepAbsSwh.Error THEN
+		bError := TRUE;
+		nErrID := mcStepAbsSwh.ErrorID;
+		mcStepAbsSwh(Axis := Axis, Parameter := HomingPara, Execute := FALSE);
+		eFbState := E_SimpleAxisState.Error;
+	END_IF
+
+E_SimpleAxisState.FinishHoming:	
+	mcFinishHome(Axis := Axis, Parameter := HomingPara, Execute := TRUE);
+	IF mcFinishHome.Done  THEN
+		mcFinishHome(Axis := Axis, Parameter := HomingPara, Execute := FALSE);
+		eFbState := E_SimpleAxisState.HomeToZero;
+	ELSIF mcFinishHome.CommandAborted THEN
+		mcFinishHome(Axis := Axis, Parameter := HomingPara, Execute := FALSE);
+		eFbState := E_SimpleAxisState.Aborted;
+	ELSIF mcFinishHome.Error THEN
+		bError := TRUE;
+		nErrID := mcFinishHome.ErrorID;
+		mcFinishHome(Axis := Axis, Parameter := HomingPara, Execute := FALSE);
+		eFbState := E_SimpleAxisState.Error;
+	END_IF
+
+E_SimpleAxisState.HomeToZero:
+	mcMoveAbs.Position := fbAxisSettings.HomeSetpos;
+	mcMoveAbs.Velocity := fbAxisSettings.HomeVelo;
+	mcMoveAbs(Axis := Axis, Execute := TRUE);
+	IF mcMoveAbs.Done  THEN
+		mcMoveAbs(Axis := Axis, Execute := FALSE);
+		eFbState := E_SimpleAxisState.HomeDone;
+	ELSIF mcMoveAbs.CommandAborted THEN
+		mcMoveAbs(Axis := Axis, Execute := FALSE);
+		eFbState := E_SimpleAxisState.Aborted;
+	ELSIF mcMoveAbs.Error THEN
+		bError := TRUE;
+		nErrID := mcMoveAbs.ErrorID;
+		mcMoveAbs(Axis := Axis, Execute := FALSE);
+		eFbState := E_SimpleAxisState.Error;
+	END_IF
+	
+E_SimpleAxisState.HomeDone:
+	Homed := TRUE;
+	bDone := TRUE;
+	IF Axis.Status.StandStill THEN
+		eFbState := E_SimpleAxisState.Waiting;
+	END_IF
+
+
+E_SimpleAxisState.Aborted:
+	bAborted := TRUE;
+	IF Axis.Status.StandStill THEN
+		eFbState := E_SimpleAxisState.Waiting;
+	END_IF
+
+
+E_SimpleAxisState.Error:
+	bError := TRUE;
+	IF Axis.Status.StandStill THEN
+		eFbState := E_SimpleAxisState.Waiting;
+	END_IF
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_fbCall" Id="{94dc1dcb-da32-47c1-b9c1-446485328b49}">
+      <Declaration><![CDATA[METHOD PRIVATE _fbCall : BOOL
+VAR_INPUT
+END_VAR
+
+VAR
+
+
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Axis.ReadStatus();
+
+mcPower(
+	Axis:= Axis, 
+	Enable:= bPower, 
+	Enable_Positive:= TRUE, 
+	Enable_Negative:= TRUE, 
+	Override:= 100, 
+	BufferMode:= , 
+	Options:= , 
+	Status=> PowerOn, 
+	Busy=> , 
+	Active=> , 
+	Error=> , 
+	ErrorID=> );
+
+
+mcMoveAbs(
+	Axis:= Axis, 
+	Execute:= , 
+	Position:= , 
+	Velocity:= , 
+	Acceleration:= fbAxisSettings.MovePosAcc, 
+	Deceleration:= fbAxisSettings.MovePosDec, 
+	Jerk:= fbAxisSettings.MovePosJerk, 
+	BufferMode:= , 
+	Options:= , 
+	Done=> , 
+	Busy=> , 
+	Active=> , 
+	CommandAborted=> , 
+	Error=> , 
+	ErrorID=> );
+
+
+
+
+
+mcMoveMod(
+	Axis:= Axis, 
+	Execute:= , 
+	Position:= , 
+	Velocity:= , 
+	Acceleration:= fbAxisSettings.MovePosAcc, 
+	Deceleration:= fbAxisSettings.MovePosDec, 
+	Jerk:= fbAxisSettings.MovePosJerk, 
+	Direction:= , 
+	BufferMode:= , 
+	Options:= , 
+	Done=> , 
+	Busy=> , 
+	Active=> , 
+	CommandAborted=> , 
+	Error=> , 
+	ErrorID=> );
+	
+
+
+mcMoveRel(
+	Axis:= Axis, 
+	Execute:= , 
+	Distance:= , 
+	Velocity:= , 
+	Acceleration:= fbAxisSettings.MovePosAcc, 
+	Deceleration:= fbAxisSettings.MovePosDec, 
+	Jerk:= fbAxisSettings.MovePosJerk, 
+	BufferMode:= , 
+	Options:= , 
+	Done=> , 
+	Busy=> , 
+	Active=> , 
+	CommandAborted=> , 
+	Error=> , 
+	ErrorID=> );
+	
+
+
+mcMoveVel(
+	Axis:= Axis, 
+	Execute:= , 
+	Velocity:= , 
+	Acceleration:= fbAxisSettings.MoveVeloAcc, 
+	Deceleration:= fbAxisSettings.MoveVeloDec, 
+	Jerk:= fbAxisSettings.MoveVeloJerk, 
+	Direction:= fbAxisSettings.MoveVeloDirection, 
+	BufferMode:= , 
+	Options:= , 
+	InVelocity=> , 
+	Busy=> , 
+	Active=> , 
+	CommandAborted=> , 
+	Error=> , 
+	ErrorID=> );
+	
+
+
+mcJog(
+	Axis:= Axis, 
+	JogForward:= , 
+	JogBackwards:= , 
+	Mode:= MC_JOGMODE_CONTINOUS, 
+	Position:= , 
+	Velocity:= , 
+	Acceleration:= fbAxisSettings.JogAcc, 
+	Deceleration:= fbAxisSettings.JogDec, 
+	Jerk:= fbAxisSettings.JogJerk, 
+	Done=> , 
+	Busy=> , 
+	Active=> , 
+	CommandAborted=> , 
+	Error=> , 
+	ErrorID=> );
+
+(*
+- (负极限)======>======(原点)=======>=====(正极限) +
+回原通过以下两个参数设置, 在当前设置下:
+1. 在负极限与原点之间
+	向负方向运动直到触发负极限后向正方向运动，经过原点后以原点信号下降沿作为原点
+2. 在原点上与1相同
+	向负方向运动直到触发负极限后向正方向运动，经过原点后以原点信号下降沿作为原点
+3. 在原点与正极限之间
+	向负方向运动触发原点后向正方向运动，经过原点后以原点信号下降沿作为原点
+*)
+HomeDirection := MC_Home_Direction.mcNegativeDirection;
+HomeSwhMode := MC_Switch_Mode.mcFallingEdgeInverse;
+
+HomeOptions.DisableDriveAccess := TRUE;
+HomeRefSignal.Level := fbAxisSettings.HomeSignal;
+mcStepAbsSwh(
+	Axis:= Axis, 
+	Parameter:= HomingPara, 
+	Execute:= , 
+	Direction:= HomeDirection, 
+	SwitchMode:= HomeSwhMode, 
+	ReferenceSignal:= HomeRefSignal, 
+	Velocity:= fbAxisSettings.HomeVelo, 
+	Acceleration:= fbAxisSettings.HomeAcc, 
+	Deceleration:= fbAxisSettings.HomeDec, 
+	Jerk:= fbAxisSettings.HomeJerk, 
+	SetPosition:= fbAxisSettings.HomeSetpos, 
+	TimeLimit:= , 
+	DistanceLimit:= , 
+	TorqueLimit:= , 
+	PositiveLimitSwitch:= fbAxisSettings.HomePosLimit, 
+	NegativeLimitSwitch:= fbAxisSettings.HomeNegLimit, 
+	BufferMode:= , 
+	Options:= HomeOptions, 
+	Done=> , 
+	Busy=> , 
+	Active=> , 
+	CommandAborted=> , 
+	Error=> , 
+	ErrorID=> );	
+
+FinishHomeOptions.DisableDriveAccess := TRUE;
+mcFinishHome(
+	Axis:= Axis, 
+	Parameter:= HomingPara, 
+	Execute:= , 
+	Distance:= 0, 
+	Velocity:= fbAxisSettings.HomeVelo, 
+	Acceleration:= fbAxisSettings.HomeAcc, 
+	Deceleration:= fbAxisSettings.HomeDec, 
+	Jerk:= fbAxisSettings.HomeJerk, 
+	BufferMode:= , 
+	Options:= FinishHomeOptions, 
+	Done=> , 
+	Busy=> , 
+	CommandAborted=> , 
+	Error=> , 
+	ErrorID=> );
+
+	
+	
+mcReset(
+	Axis:= Axis, 
+	Execute:= bReset, 
+	Done=> , 
+	Busy=> , 
+	Error=> , 
+	ErrorID=> );
+	
+
+
+mcStop(
+	Axis:= Axis, 
+	Execute:= bStop, 
+	Deceleration:= , 
+	Jerk:= , 
+	Options:= , 
+	Done=> , 
+	Busy=> , 
+	Active=> , 
+	CommandAborted=> , 
+	Error=> , 
+	ErrorID=> );]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_SimpleAxis">
+      <LineId Id="930" Count="14" />
+      <LineId Id="946" Count="0" />
+      <LineId Id="1054" Count="1" />
+      <LineId Id="164" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SimpleAxis._CyclicLogic">
+      <LineId Id="178" Count="17" />
+      <LineId Id="351" Count="1" />
+      <LineId Id="196" Count="3" />
+      <LineId Id="350" Count="0" />
+      <LineId Id="357" Count="1" />
+      <LineId Id="353" Count="0" />
+      <LineId Id="399" Count="1" />
+      <LineId Id="376" Count="0" />
+      <LineId Id="382" Count="0" />
+      <LineId Id="387" Count="0" />
+      <LineId Id="401" Count="0" />
+      <LineId Id="389" Count="8" />
+      <LineId Id="355" Count="0" />
+      <LineId Id="398" Count="0" />
+      <LineId Id="354" Count="0" />
+      <LineId Id="402" Count="2" />
+      <LineId Id="356" Count="0" />
+      <LineId Id="349" Count="0" />
+      <LineId Id="200" Count="148" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SimpleAxis._fbCall">
+      <LineId Id="126" Count="1" />
+      <LineId Id="6" Count="11" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="163" Count="0" />
+      <LineId Id="129" Count="0" />
+      <LineId Id="42" Count="14" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="161" Count="1" />
+      <LineId Id="130" Count="0" />
+      <LineId Id="159" Count="1" />
+      <LineId Id="58" Count="4" />
+      <LineId Id="213" Count="1" />
+      <LineId Id="65" Count="8" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="124" Count="0" />
+      <LineId Id="132" Count="1" />
+      <LineId Id="75" Count="4" />
+      <LineId Id="215" Count="1" />
+      <LineId Id="82" Count="7" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="123" Count="0" />
+      <LineId Id="134" Count="1" />
+      <LineId Id="91" Count="14" />
+      <LineId Id="90" Count="0" />
+      <LineId Id="122" Count="0" />
+      <LineId Id="136" Count="1" />
+      <LineId Id="107" Count="14" />
+      <LineId Id="106" Count="0" />
+      <LineId Id="254" Count="0" />
+      <LineId Id="226" Count="0" />
+      <LineId Id="259" Count="0" />
+      <LineId Id="257" Count="0" />
+      <LineId Id="256" Count="0" />
+      <LineId Id="260" Count="4" />
+      <LineId Id="258" Count="0" />
+      <LineId Id="224" Count="1" />
+      <LineId Id="255" Count="0" />
+      <LineId Id="217" Count="0" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="172" Count="23" />
+      <LineId Id="167" Count="0" />
+      <LineId Id="243" Count="0" />
+      <LineId Id="168" Count="0" />
+      <LineId Id="227" Count="5" />
+      <LineId Id="244" Count="1" />
+      <LineId Id="235" Count="6" />
+      <LineId Id="169" Count="0" />
+      <LineId Id="211" Count="0" />
+      <LineId Id="139" Count="0" />
+      <LineId Id="212" Count="0" />
+      <LineId Id="20" Count="5" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="140" Count="1" />
+      <LineId Id="28" Count="10" />
+      <LineId Id="27" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
