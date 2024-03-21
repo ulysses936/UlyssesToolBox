@@ -3,13 +3,110 @@
   <POU Name="MAIN" Id="{5acbb519-50b6-4a11-9b3f-9b411aa3ed7d}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM MAIN
 VAR
+	tcpTest : FB_TcpSendReceivingQueue;
+	tcpTest2 : FB_TcpSendReceiving;
+	bAddTask: BOOL;
+	arrData : ARRAY[0..255] OF BYTE;
+	arrRecv : ARRAY[0..255] OF BYTE;
+	bool1 : BOOL;
+	bool2 : BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[]]></ST>
+      <ST><![CDATA[tcpTest(
+	bEnable:= TRUE, 
+	bReset:= , 
+	sRemoteIp:= '127.0.0.1', 
+	nRemotePort:= 8003, 
+	pRecvData:= ADR(arrRecv), 
+	nRecvSize:= SIZEOF(arrRecv), 
+	bBusyConnect=> , 
+	bConnected=> , 
+	bBusySend=> , 
+	bSendDone=> , 
+	bBusyRecv=> , 
+	bRecvDone=> , 
+	bError=> , 
+	nRecvBytes=> , 
+	bDataReceived=> );
+bool1 := FAILED(0);
+bool2 := FAILED(16#80000013);
+IF bAddTask THEN
+	bAddTask := FALSE;
+	arrData[0] := 67;
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	arrData[0] := 68;
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	arrData[0] := 69;
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	arrData[0] := 70;
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	arrData[0] := 71;
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	arrData[0] := 72;
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	arrData[0] := 73;
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	arrData[0] := 74;
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
+END_IF]]></ST>
     </Implementation>
     <LineIds Name="MAIN">
+      <LineId Id="10" Count="14" />
       <LineId Id="5" Count="0" />
+      <LineId Id="109" Count="1" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="81" Count="3" />
+      <LineId Id="59" Count="1" />
+      <LineId Id="77" Count="3" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="66" Count="4" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="72" Count="4" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="86" Count="4" />
+      <LineId Id="85" Count="0" />
+      <LineId Id="92" Count="4" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="98" Count="4" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="104" Count="4" />
+      <LineId Id="103" Count="0" />
+      <LineId Id="27" Count="0" />
     </LineIds>
   </POU>
 </TcPlcObject>

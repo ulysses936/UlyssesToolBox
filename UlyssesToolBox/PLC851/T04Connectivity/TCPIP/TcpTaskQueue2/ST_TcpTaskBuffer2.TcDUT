@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_TcpTaskBuffer2" Id="{a34a6ccf-8f1c-4470-a47f-cc3c82c1e075}">
+    <Declaration><![CDATA[{attribute 'pack_mode' := '1'}
+TYPE ST_TcpTaskBuffer2 :
+STRUCT
+	BufferInfo : UDINT;
+	TaskData : ST_TcpTask2;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

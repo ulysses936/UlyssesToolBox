@@ -34,6 +34,9 @@
     <Compile Include="T04Connectivity\TCPIP\FB_TcpSendReceiving.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="T04Connectivity\TCPIP\FB_TcpSendReceivingQueue.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="T04Connectivity\TCPIP\SimpleClient\SimpleTcpClient.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -41,6 +44,24 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="T04Connectivity\TCPIP\SimpleClient\stSktPara.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="T04Connectivity\TCPIP\TcpTaskQueue\FB_SimpleTcpTaskQueue.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="T04Connectivity\TCPIP\TcpTaskQueue\ST_TcpTask.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="T04Connectivity\TCPIP\TcpTaskQueue\ST_TcpTaskBuffer.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="T04Connectivity\TCPIP\TcpTaskQueue2\FB_SimpleTcpTaskQueue2.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="T04Connectivity\TCPIP\TcpTaskQueue2\ST_TcpTaskBuffer2.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="T04Connectivity\TCPIP\TcpTaskQueue2\ST_TcpTask2.TcDUT">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="T05Motion\SimpleAxis\E_MoveMode.TcDUT">
@@ -73,8 +94,16 @@
       <DefaultResolution>Tc2_TcpIp, * (Beckhoff Automation GmbH)</DefaultResolution>
       <Namespace>Tc2_TcpIp</Namespace>
     </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_Utilities">
+      <DefaultResolution>Tc2_Utilities, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_Utilities</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc3_DynamicMemory">
+      <DefaultResolution>Tc3_DynamicMemory, * (Beckhoff Automation GmbH)</DefaultResolution>
+    </PlaceholderReference>
     <PlaceholderReference Include="Tc3_MC2_AdvancedHoming">
       <DefaultResolution>Tc3_MC2_AdvancedHoming, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc3_MC2_AdvancedHoming</Namespace>
     </PlaceholderReference>
     <PlaceholderReference Include="Tc3_Module">
       <DefaultResolution>Tc3_Module, * (Beckhoff Automation GmbH)</DefaultResolution>
@@ -84,9 +113,18 @@
   <ItemGroup>
     <Folder Include="T04Connectivity" />
     <Folder Include="T04Connectivity\TCPIP" />
+    <Folder Include="T04Connectivity\TCPIP\TcpTaskQueue">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </Folder>
     <Folder Include="T04Connectivity\TCPIP\SimpleClient" />
+    <Folder Include="T04Connectivity\TCPIP\TcpTaskQueue2" />
     <Folder Include="T05Motion" />
     <Folder Include="T05Motion\SimpleAxis" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PLC851.tmc">
+      <SubType>Content</SubType>
+    </None>
   </ItemGroup>
   <ProjectExtensions>
     <PlcProjectOptions>

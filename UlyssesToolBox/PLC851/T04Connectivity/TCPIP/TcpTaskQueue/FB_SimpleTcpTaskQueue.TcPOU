@@ -1,0 +1,152 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_SimpleTcpTaskQueue" Id="{d780e731-24ac-4b7e-ba4b-e0d378ea38c2}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_SimpleTcpTaskQueue
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	WaitingQueue		: FB_MemRingBufferEx;
+	ArrWaitingQueue		: ARRAY[0..MAXBUFFERSIZE] OF ST_TcpTaskBuffer;
+	ActingQueue			: FB_MemRingBufferEx;
+	ArrActingQueue		: ARRAY[0..MAXBUFFERSIZE] OF ST_TcpTaskBuffer;
+	
+	PushTask	: ST_TcpTask;
+	PopTask		: ST_TcpTask;
+	EmptyTask	: ST_TcpTask;
+	
+	StepTaskConsume : DINT;
+	
+	_NoTaskToConsume : BOOL;
+	_WaitingForTaskDone: BOOL;
+	
+	_TaskComplete : BOOL;
+	
+	_WaitingTaskCount: UDINT;
+	_WaitingUsedSize: UDINT;
+	_WaitingFreeSize: UDINT;
+	
+	_ActingTaskCount: UDINT;
+	_ActingTotalSize: UDINT;
+	_ActingFreeSize: UDINT;
+
+END_VAR
+
+VAR CONSTANT
+	MAXBUFFERSIZE: UDINT := 128;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[WaitingQueue(pWrite:= , cbWrite:= , pBuffer:= ADR(ArrWaitingQueue), cbBuffer:= SIZEOF(ArrWaitingQueue), 
+	bOk=> , pRead=> , cbRead=> , nCount=> _WaitingTaskCount, cbSize=> _WaitingUsedSize, cbFree=> _WaitingFreeSize);
+ActingQueue(pWrite:= , cbWrite:= , pBuffer:= ADR(ArrActingQueue), cbBuffer:= SIZEOF(ArrActingQueue), 
+	bOk=> , pRead=> , cbRead=> , nCount=> _ActingTaskCount, cbSize=> _ActingTotalSize, cbFree=> _ActingFreeSize);
+
+_NoTaskToConsume := (StepTaskConsume = 0);
+_WaitingForTaskDone := (StepTaskConsume <> 0);
+CASE StepTaskConsume OF
+	0:
+	_NoTaskToConsume := TRUE;
+	IF ActingQueue.nCount <> 0 THEN
+		StepTaskConsume := 10;
+	END_IF
+	
+	10:
+	ActingQueue.A_GetHead(pWrite:= , cbWrite:= , pBuffer:= ADR(ArrActingQueue), cbBuffer:= SIZEOF(ArrActingQueue), 
+	bOk=> , pRead=> , cbRead=> , nCount=> _ActingTaskCount, cbSize=> _ActingTotalSize, cbFree=> _ActingFreeSize);
+	IF ActingQueue.bOk THEN
+		MEMCPY(destAddr:= ADR(PopTask), srcAddr:= ActingQueue.pRead, n:= MIN(SIZEOF(PopTask),ActingQueue.cbRead));
+		_TaskComplete := FALSE;
+		StepTaskConsume := 20;
+	ELSE
+		StepTaskConsume := 0;
+	END_IF
+	
+	20:
+	// wait for task done
+	
+END_CASE
+	
+	
+	
+	]]></ST>
+    </Implementation>
+    <Property Name="ActingTaskCount" Id="{f7d1a5b6-a974-4530-96b3-b2a38791f56a}">
+      <Declaration><![CDATA[PROPERTY ActingTaskCount : UDINT]]></Declaration>
+      <Get Name="Get" Id="{e3554c11-1bd8-4622-8bb9-885262363299}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ActingTaskCount := _ActingTaskCount;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="AddActingTask" Id="{9fd2258c-e381-4976-bd28-fb706ff76faa}">
+      <Declaration><![CDATA[METHOD AddActingTask : BOOL
+VAR_INPUT
+	TaskName : STRING(24);
+	TaskType : INT; (* 0:Once, 1:Regular *)
+	TaskData : ARRAY[0..255] OF BYTE;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[PushTask.TaskName := TaskName;
+PushTask.TaskType := TaskType;
+PushTask.TaskData := TaskData;
+ActingQueue.A_AddTail(pWrite:= ADR(PushTask), cbWrite:= SIZEOF(PushTask), pBuffer:= ADR(ArrActingQueue), cbBuffer:= SIZEOF(ArrActingQueue), 
+	bOk=> AddActingTask, pRead=> , cbRead=> , nCount=> _ActingTaskCount, cbSize=> _ActingTotalSize, cbFree=> _ActingFreeSize);]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="CurrentTask" Id="{dd3b0faf-cdf0-4c8e-9eed-3a8816deb74b}">
+      <Declaration><![CDATA[PROPERTY CurrentTask : ST_TcpTask]]></Declaration>
+      <Get Name="Get" Id="{2cb44f85-d2b4-4028-a910-eed368a5d449}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[CurrentTask := PopTask;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="FinishTask" Id="{f38adcec-8874-4e5c-bc2f-2dbd281da56b}">
+      <Declaration><![CDATA[METHOD FinishTask : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[ActingQueue.A_FreeHead(pWrite:= , cbWrite:= , pBuffer:= ADR(ArrActingQueue), cbBuffer:= SIZEOF(ArrActingQueue), 
+bOk=> , pRead=> , cbRead=> , nCount=> _ActingTaskCount, cbSize=> _ActingTotalSize, cbFree=> _ActingFreeSize);
+IF ActingQueue.bOk THEN
+	MEMCPY(destAddr:= ADR(PopTask), srcAddr:= ADR(EmptyTask), n:= SIZEOF(ST_TcpTask));
+	IF ActingQueue.nCount <> 0 THEN
+		StepTaskConsume := 10;
+	ELSE
+		StepTaskConsume := 0;
+	END_IF
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_SimpleTcpTaskQueue">
+      <LineId Id="263" Count="31" />
+      <LineId Id="149" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SimpleTcpTaskQueue.ActingTaskCount.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SimpleTcpTaskQueue.AddActingTask">
+      <LineId Id="21" Count="3" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SimpleTcpTaskQueue.CurrentTask.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SimpleTcpTaskQueue.FinishTask">
+      <LineId Id="6" Count="3" />
+      <LineId Id="15" Count="1" />
+      <LineId Id="18" Count="1" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
