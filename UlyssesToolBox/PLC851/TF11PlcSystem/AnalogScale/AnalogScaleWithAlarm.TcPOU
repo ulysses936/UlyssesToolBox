@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="AnalogScaleWithAlarm" Id="{0d2ad7dc-e7c9-4cde-8d1e-ce0eeaabdf17}" SpecialFunc="None">
+    <Declaration><![CDATA[(* OutputValue := InputValue * (OutputMax - OutputMin)/(InputMax - InputMin) + OutputMin *)
+FUNCTION_BLOCK AnalogScaleWithAlarm
+VAR_INPUT
+	InputValue	: LREAL;
+	InputMin	: LREAL:=0;
+	InputMax	: LREAL:=100;
+	OutputMin	: LREAL:=0;
+	OutputMax	: LREAL:=100;
+	LL_Set	: LREAL;
+	L_Set	: LREAL;
+	H_Set	: LREAL;
+	HH_Set	: LREAL;
+END_VAR
+VAR_OUTPUT
+	OutputValue	: LREAL;
+	Percentage : LREAL;
+	DataInvalid : BOOL;
+	LL : BOOL;
+	L : BOOL;
+	H : BOOL;
+	HH : BOOL;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF InputMax - InputMin = 0 THEN
+	DataInvalid := TRUE;
+ELSE
+	OutputValue := InputValue * (OutputMax - OutputMin)/(InputMax - InputMin) + OutputMin;
+	Percentage := (InputValue - InputMin)/(InputMax - InputMin);
+	DataInvalid := FALSE;
+END_IF
+
+LL := OutputValue < LL_Set;
+L := OutputValue < L_Set;
+H := OutputValue > H_Set;
+HH := OutputValue > HH_Set;
+]]></ST>
+    </Implementation>
+    <LineIds Name="AnalogScaleWithAlarm">
+      <LineId Id="18" Count="6" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="57" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

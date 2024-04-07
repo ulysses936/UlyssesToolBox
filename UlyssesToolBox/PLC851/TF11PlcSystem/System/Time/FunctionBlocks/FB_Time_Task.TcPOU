@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Time_Task" Id="{fa0673a6-bd96-4919-a556-0143689d2188}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Time_Task
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+	(* AppInfo *)
+	oTaskInfo: PlcTaskSystemInfo;
+	oAppInfo: PlcAppSystemInfo;
+	(* Time *)
+	oDcTaskTime: LINT;
+	oUnixTimeStamp10: ULINT;
+	oUnixTimeStamp13: ULINT;
+	oFileTime64: ULINT;
+	oDateAndTime: DATE_AND_TIME;
+	oSystemTime: TIMESTRUCT;
+	oStringTime: STRING;
+	oStringDate: STRING;
+	oStringTimeOfDay: STRING;
+END_VAR
+VAR
+	fbTimeConvertor : FB_TimeConvertorM;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* 
+Title		: 系统时间 FB_Time_Task
+Time		: 2023-11-13 13:25
+Version		: 1.0
+Creator		: Ulysses
+Reference	: IOTA - Blue \ Siemens
+Commecnts	: 从Task数据获取DcTaskTime，并通过转换功能块转换为其他格式
+*)
+oAppInfo := _AppInfo;
+oTaskInfo := _TaskInfo[GETCURTASKINDEXEX()];
+fbTimeConvertor(
+	InputType:= 0, 
+	iDcTaskTime:= _TaskInfo[GETCURTASKINDEXEX()].DcTaskTime, 
+	oDcTaskTime=> oDcTaskTime, 
+	oUnixTimeStamp10=> oUnixTimeStamp10, 
+	oUnixTimeStamp13=> oUnixTimeStamp13, 
+	oFileTime64=> oFileTime64, 
+	oDateAndTime=> oDateAndTime, 
+	oSystemTime=> oSystemTime, 
+	oStringTime=> oStringTime, 
+	oStringDate=> oStringDate, 
+	oStringTimeOfDay=> oStringTimeOfDay);]]></ST>
+    </Implementation>
+    <LineIds Name="FB_Time_Task">
+      <LineId Id="299" Count="6" />
+      <LineId Id="298" Count="0" />
+      <LineId Id="193" Count="12" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

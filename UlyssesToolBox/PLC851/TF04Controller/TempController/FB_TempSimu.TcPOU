@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_TempSimu" Id="{777d2206-7334-4e1a-969d-35031af14515}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_TempSimu
+VAR_INPUT
+	fY: LREAL;
+	tCycleTIme: TIME;
+	bNoise: BOOL;
+END_VAR
+VAR_OUTPUT
+	fX: LREAL;
+END_VAR
+VAR
+	fbTempSimu: FB_CTRL_PT2;
+	SimuPara: ST_CTRL_PT2_PARAMS;
+	fbNoiseGen: FB_CTRL_NOISE_GENERATOR;
+	tT1: TIME := T#10S;
+	tT2: TIME := T#0MS;
+	NoisePara: ST_CTRL_NOISE_GENERATOR_PARAMS;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* 该功能块使用一个二阶系统作为温度模型 *)
+
+
+SimuPara.fKp := 0.2;
+SimuPara.tCtrlCycleTime := tCycleTIme;
+SimuPara.tTaskCycleTime := tCycleTIme;
+SimuPara.tT1 := tT1;
+SimuPara.tT2 := tT2;
+
+NoisePara.fAmplitude := 5;
+NoisePara.tCtrlCycleTime := tCycleTIme;
+NoisePara.tTaskCycleTime := tCycleTIme;
+
+fbTempSimu(
+	fIn:= fY, 
+	fManValue:= , 
+	eMode:= eCTRL_MODE_ACTIVE, 
+	bHold:= , 
+	fOut=> , 
+	eState=> , 
+	eErrorId=> , 
+	bError=> , 
+	stParams:= SimuPara);
+fbNoiseGen(
+	fManSyncValue:= 0.0, 
+	eMode:= eCTRL_MODE_ACTIVE, 
+	fOut=> , 
+	eState=> , 
+	eErrorId=> , 
+	bError=> , 
+	stParams:= NoisePara);
+
+IF bNoise THEN
+	fX := fbTempSimu.fOut * 10 + 0.005*fbNoiseGen.fOut;
+ELSE
+	fX := fbTempSimu.fOut * 10;
+END_IF;]]></ST>
+    </Implementation>
+    <LineIds Name="FB_TempSimu">
+      <LineId Id="3" Count="0" />
+      <LineId Id="5" Count="34" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="DI_Button" Id="{b05691bf-f85a-4bd4-a142-beee8e1ae97d}" SpecialFunc="None">
+    <Declaration><![CDATA[{attribute 'no_check'}
+(* 
+按钮功能块 Button
+按钮功能块，总体和Input差不多，针对按钮做了功能的完善可以将输入信号强制、反转或延迟
+*)
+FUNCTION_BLOCK DI_Button
+VAR_INPUT
+	Enable : BOOL := TRUE; (* 默认为True, False:不启用,除LED外输入无效  \ True:启用 *)
+	Invert : BOOL := FALSE; (* False: 不反转Direct \ True: 在源头反转输入Invert Input *)
+	Force : BOOL; (* 将输入强制为True, Force the In signal to True *)
+	TrigOn : BOOL; (* 手动将Toggle模式输出置为True, 无论反转都是off优先 *)
+	TrigOff : BOOL; (* 手动将Toggle模式输出置为False, 无论反转都是off优先 *)
+	TrigOnDelay : BOOL; (* 手动将延迟后的Toggle模式输出置为True, 复位优先 *)
+	TrigOffDelay : BOOL; (* 手动将延迟后的Toggle模式输出置为False, 复位优先 *)
+	DelayTime : TIME := T#50MS; (* 延迟输出时间，T#0MS代表无延迟，也可充当滤波功能 *)
+	LED AT%Q* : BOOL; (* 如果按钮有LED，绑定到LED的输出上，功能块内部本身不控制LED，需要外部程序通过该输入引脚控制 *)
+END_VAR
+VAR_OUTPUT
+	Q : BOOL;(* 直接输出信号 *)
+	Q_RT : BOOL;(* 输入信号的上升沿 *)
+	Q_FT : BOOL;(* 输入信号的下降沿 *)
+	Q_Tog : BOOL;(* Toggle模式输出，按一下切换为True，再按一下切换为False *)
+	Q_Delay : BOOL;(* 经过延迟后的输出信号 *)
+	Q_Delay_RT : BOOL;(* 经过延迟后的输出信号的上升沿 *)
+	Q_Delay_FT : BOOL;(* 经过延迟后的输出信号的上升沿 *)
+	Q_Delay_Tog : BOOL;(* 经过延迟后的Toggle模式输出，按一下切换为True，再按一下切换为False *)
+	RawIn AT%I* :BOOL; (* 原始输入信号，未经强制、反转及延时 *) 
+END_VAR
+VAR
+	rTrig, rTrig_Delay : R_TRIG;
+	fTrig, fTrig_Delay : F_TRIG;
+	tonDelay : TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+TIME		: 2023-11-13 14:59
+Version		: 1.0
+Creator		: Ulysses
+Reference	: IOTA - BLUE
+Commecnts	: 按钮功能块，总体和Input差不多，针对按钮做了功能的完善。可以将输入信号强制、反转或延迟
+*)
+(* 不带延迟 *)
+Q			:= ((RawIn OR Force) XOR Invert) AND Enable;
+rTrig(CLK:= Q);
+Q_RT		:= rTrig.Q;
+fTrig(CLK:= Q);
+Q_FT		:= fTrig.Q;
+Q_Tog	:= NOT (TrigOff AND Enable) AND (Q_RT XOR Q_Tog OR (TrigOn AND Enable));
+(* 带延迟 *)
+tonDelay(IN:= Q, PT:= DelayTime);
+Q_Delay		:= tonDelay.Q;
+rTrig_Delay(CLK:= Q_Delay);
+Q_Delay_RT	:= rTrig_Delay.Q;
+fTrig_Delay(CLK:= Q_Delay);
+Q_Delay_FT	:= fTrig_Delay.Q;
+
+Q_Delay_Tog := NOT (TrigOffDelay AND Enable) AND (Q_Delay_RT XOR Q_Delay_Tog OR (TrigOnDelay AND Enable));
+]]></ST>
+    </Implementation>
+    <LineIds Name="DI_Button">
+      <LineId Id="30" Count="0" />
+      <LineId Id="25" Count="4" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="63" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="38" Count="1" />
+      <LineId Id="45" Count="1" />
+      <LineId Id="40" Count="1" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="55" Count="0" />
+      <LineId Id="57" Count="1" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="59" Count="0" />
+      <LineId Id="56" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

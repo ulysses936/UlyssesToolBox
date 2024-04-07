@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_TuneMode" Id="{7d71793d-1d38-4dab-9af7-0de395316601}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_TuneMode :
+(
+	Normal := 0,
+	Fast := 1,
+	Slow :=2
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

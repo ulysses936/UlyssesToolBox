@@ -1,0 +1,180 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_TimeConvertor0" Id="{cd34ac2a-57e5-4599-8ef9-111ebfa44026}" SpecialFunc="None">
+    <Declaration><![CDATA[{attribute 'hide_all_locals'}
+(* 用于在多种常用的时间格式间进行转换的功能块,不考虑时区 *)
+FUNCTION_BLOCK FB_TimeConvertor0
+VAR_INPUT
+	InputType : UDINT := 0 ; (* 0:DcTaskTime 1:10位Unix 2:13位Unix 3:FileTime64 4:DateAndTime 5:SystemTime *)
+	iDcTaskTime : LINT; (* DcTaskTime从2000-01-01 00:00:00:000开始，精确到1ns *)
+	iUnixTimeStamp10 : ULINT; (* 10位unix时间戳，代表从格林威治时间1970-01-01 00:00:00开始的秒数 *)
+	iUnixTimeStamp13 : ULINT; (* 13位unix时间戳，代表从格林威治时间1970-01-01 00:00:00开始的秒数+3位毫秒数 *)
+	iFileTime64 : T_FILETIME64; (* Utilities库中引入的Windows文件系统时间戳，代表从格林威治时间1601-01-01 00:00:00开始的纳秒数 *)
+	iDateAndTime : DATE_AND_TIME; (* TwinCAT系统自带的本地时间日期格式，数值为10位unix时间戳，受到时区影响 *)
+	iSystemTime : TIMESTRUCT; (* Utilities库中定义的本地时间日期格式，包含了年月日时分秒毫秒的结构体，受到时区影响 *)
+END_VAR
+VAR_OUTPUT
+	oDcTaskTime : LINT;(* DcTaskTime从2000-01-01 00:00:00:000开始，精确到1ns *)
+	oUnixTimeStamp10 : ULINT; (* 10位unix时间戳，代表从格林威治时间1970-01-01 00:00:00开始的秒数 *)
+	oUnixTimeStamp13 : ULINT; (* 13位unix时间戳，代表从格林威治时间1970-01-01 00:00:00开始的秒数+3位毫秒数 *)
+	oFileTime64 : T_FILETIME64; (* Utilities库中引入的Windows文件系统时间戳，代表从格林威治时间1601-01-01 00:00:00开始的纳秒数 *)
+	oDateAndTime : DATE_AND_TIME; (* TwinCAT系统自带的本地时间日期格式，数值为10位unix时间戳，受到时区影响 *)
+	oSystemTime : TIMESTRUCT; (* Utilities库中定义的本地时间日期格式，包含了年月日时分秒毫秒的结构体，受到时区影响 *)
+	oStringTime : STRING(23); (* 时间字符串，年月日时分秒毫秒 *)
+	oStringDate : STRING(10); (* 时间字符串，年月日 *)
+	oStringTimeOfDay : STRING(12); (* 时间字符串，时分秒毫秒 *)
+END_VAR
+VAR
+	(* 0 *)
+	_in0DcTaskTime : LINT;(* DcTaskTime从2000-01-01 00:00:00:000开始，精确到1ns *)
+	_in0UnixTimeStamp10 : ULINT; (* 10位unix时间戳，代表从格林威治时间1970-01-01 00:00:00开始的秒数 *)
+	_in0UnixTimeStamp13 : ULINT; (* 13位unix时间戳，代表从格林威治时间1970-01-01 00:00:00开始的秒数+3位毫秒数 *)
+	_in0FileTime64 : T_FILETIME64; (* Utilities库中引入的Windows文件系统时间戳，代表从格林威治时间1601-01-01 00:00:00开始的纳秒数 *)
+	_in0DateAndTime : DATE_AND_TIME; (* TwinCAT系统自带的本地时间日期格式，数值为10位unix时间戳，受到时区影响 *)
+	_in0SystemTime : TIMESTRUCT; (* Utilities库中定义的本地时间日期格式，包含了年月日时分秒毫秒的结构体，受到时区影响 *)
+	(* string *)
+	_in0StringTime : STRING(23); (* Utilities库中定义的本地时间日期格式，包含了年月日时分秒毫秒的结构体，受到时区影响 *)
+	
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* 测试数据751214127491000000,1697898927,1697898927491,LDT#2023-10-21-14:35:22.491,DT#2023-10-21-14:35:22,..  *)
+(* 由于Utilities库中自带了Filetime64与DT, Systemtime之间的转换，本功能块仅仅是添加了Filetime64与DcTaskTime与UnixTimeStamp之前的转换 *)
+(* 转换思路是先尽可能转换成Filetime64，再利用自带函数转换 *)
+(* Filetime64与DcTaskTime与UnixTimeStamp都是一种时间戳，区别在于起始时间或精度各不相同 *)
+(* DcTaskTime从2000-01-01 00:00:00:000开始，精确到1ns *)
+(* 10位Unix时间戳从1970-01-01 00:00:00开始，精确到1s，13位Unix时间戳加了三位表示毫秒的数 *)
+(* FileTime64从1601-01-01 00:00:00开始，精确到100ns, *)
+(* 946684800:从1970-2000年的秒数  11644473600:从1601-1970的秒数  5:误差补偿 *)
+CASE InputType OF
+	0:(* DcTaskTime从2000-01-01 00:00:00:000开始，精确到1ns *)
+	(* Input *)
+	_in0DcTaskTime := iDcTaskTime;
+	(* Convert *)
+	_in0FileTime64 := LINT_TO_ULINT(_in0DcTaskTime)/100 + 946684800_0000000 + 11644473600_0000000 - 5_0000000;
+	_in0UnixTimeStamp13 := _in0FileTime64/10000 + 5000 - 11644473600000;
+	_in0UnixTimeStamp10 := _in0UnixTimeStamp13 / 1000;
+	_in0DateAndTime := FILETIME64_TO_DT(_in0FileTime64);
+	_in0SystemTime := FILETIME64_TO_SYSTEMTIME(_in0FileTime64);
+	
+	1: (* Unix10 -> Unix13 : 由于10位时间戳不包含毫秒，所以转换出来的也不包含 *)
+	(* Input *)
+	_in0UnixTimeStamp10 := iUnixTimeStamp10;
+	(* Convert *)
+	_in0UnixTimeStamp13 := _in0UnixTimeStamp10 * 1000;
+	_in0FileTime64 := (_in0UnixTimeStamp13 + 11644473600000 - 5000) * 10000;
+	_in0DateAndTime := FILETIME64_TO_DT(_in0FileTime64);
+	_in0SystemTime := FILETIME64_TO_SYSTEMTIME(_in0FileTime64);
+	_in0DcTaskTime := ULINT_TO_LINT(_in0FileTime64 - 946684800_0000000 - 11644473600_0000000 + 5_0000000) * 100;
+	
+	2:
+	(* Input *)
+	_in0UnixTimeStamp13 := iUnixTimeStamp13;
+	(* Convert *)
+	_in0UnixTimeStamp10 := _in0UnixTimeStamp13 / 1000;
+	_in0FileTime64 := (_in0UnixTimeStamp13 + 11644473600000 - 5000) * 10000;
+	_in0DateAndTime := FILETIME64_TO_DT(_in0FileTime64);
+	_in0SystemTime := FILETIME64_TO_SYSTEMTIME(_in0FileTime64);
+	_in0DcTaskTime := ULINT_TO_LINT(_in0FileTime64 - 946684800_0000000 - 11644473600_0000000 + 5_0000000) * 100;
+	
+	3:
+	(* Input *)
+	_in0FileTime64 := iFileTime64;
+	(* Convert *)
+	_in0UnixTimeStamp13 := _in0FileTime64/10000 + 5000 - 11644473600000;
+	_in0UnixTimeStamp10 := _in0UnixTimeStamp13 / 1000;
+	_in0DateAndTime := FILETIME64_TO_DT(_in0FileTime64);
+	_in0SystemTime := FILETIME64_TO_SYSTEMTIME(_in0FileTime64);
+	_in0DcTaskTime := ULINT_TO_LINT(_in0FileTime64 - 946684800_0000000 - 11644473600_0000000 + 5_0000000) * 100;
+	
+	4:
+	(* Input *)
+	_in0DateAndTime := iDateAndTime;
+	(* Convert *)
+	_in0FileTime64 := DT_TO_FILETIME64(_in0DateAndTime);
+	_in0UnixTimeStamp13 := _in0FileTime64/10000 + 5000 - 11644473600000;
+	_in0UnixTimeStamp10 := _in0UnixTimeStamp13 / 1000;
+	_in0SystemTime := FILETIME64_TO_SYSTEMTIME(_in0FileTime64);
+	_in0DcTaskTime := ULINT_TO_LINT(_in0FileTime64 - 946684800_0000000 - 11644473600_0000000 + 5_0000000) * 100;
+	
+	5:
+	(* Input *)
+	_in0SystemTime :=iSystemTime;
+	(* Convert *)
+	_in0FileTime64 := SYSTEMTIME_TO_FILETIME64(_in0SystemTime);
+	_in0UnixTimeStamp13 := _in0FileTime64/10000 + 5000 - 11644473600000;
+	_in0UnixTimeStamp10 := _in0UnixTimeStamp13 / 1000;
+	_in0DateAndTime := FILETIME64_TO_DT(_in0FileTime64);
+	_in0DcTaskTime := ULINT_TO_LINT(_in0FileTime64 - 946684800_0000000 - 11644473600_0000000 + 5_0000000) * 100;
+	
+END_CASE
+(* 2023-10-21 15:18:31:771 *)
+_in0StringTime := F_SYSTEMTIME_TO_String6(_in0SystemTime, '');
+oStringDate := MID(STR:= _in0StringTime, LEN:= 10, POS:= 1);
+oStringTimeOfDay := MID(STR:= _in0StringTime, LEN:= 12, POS:= 12);
+(* Output *)
+oDcTaskTime := _in0DcTaskTime;
+oUnixTimeStamp10 := _in0UnixTimeStamp10;
+oUnixTimeStamp13 := _in0UnixTimeStamp13;
+oFileTime64 := _in0FileTime64;
+oDateAndTime := _in0DateAndTime;
+oSystemTime := _in0SystemTime;
+oStringTime := _in0StringTime;]]></ST>
+    </Implementation>
+    <LineIds Name="FB_TimeConvertor0">
+      <LineId Id="163" Count="0" />
+      <LineId Id="167" Count="3" />
+      <LineId Id="172" Count="0" />
+      <LineId Id="171" Count="0" />
+      <LineId Id="173" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="164" Count="0" />
+      <LineId Id="125" Count="2" />
+      <LineId Id="137" Count="3" />
+      <LineId Id="131" Count="0" />
+      <LineId Id="122" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="47" Count="1" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="142" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="59" Count="6" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="159" Count="0" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="75" Count="2" />
+      <LineId Id="89" Count="0" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="80" Count="1" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="160" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="90" Count="2" />
+      <LineId Id="103" Count="0" />
+      <LineId Id="93" Count="1" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="161" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="116" Count="0" />
+      <LineId Id="106" Count="4" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="162" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="209" Count="0" />
+      <LineId Id="157" Count="0" />
+      <LineId Id="208" Count="0" />
+      <LineId Id="210" Count="0" />
+      <LineId Id="151" Count="5" />
+      <LineId Id="150" Count="0" />
+      <LineId Id="158" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

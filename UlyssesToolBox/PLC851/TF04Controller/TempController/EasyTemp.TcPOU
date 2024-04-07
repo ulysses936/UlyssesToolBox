@@ -1,0 +1,455 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="EasyTemp" Id="{d721a649-6396-47cf-a511-a95e1c51d001}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK EasyTemp
+VAR_INPUT
+	bStart : BOOL;
+	bTune : BOOL;
+	TuneMode : E_TuneMode := E_TuneMode.Normal;
+	bReset : BOOL;
+	SensorTemp : LREAL;
+	TargetTemp : LREAL;
+	
+END_VAR
+VAR_IN_OUT
+	EasyTempPara : ST_EasyTempPara;
+END_VAR
+VAR_OUTPUT
+	State : E_EasyTempState;
+	fAnalog : LREAL;
+	bPWMPos : BOOL;
+	bPWMNeg : BOOL;
+	bDigPos : BOOL;
+	bDigNeg : BOOL;
+	fMaxOverShoot: LREAL;
+	tStartUpTime: TIME;
+	eControlState: Tc2_TempController.E_CTRL_STATE;
+	bError: BOOL;
+	eErrorId: Tc2_TempController.E_CTRL_ErrorCodes;
+	fTempVelo: LREAL;
+	
+END_VAR
+VAR
+
+	rTrigStart : R_TRIG;
+	fTrigStart : F_TRIG;
+	rTrigTune : R_TRIG;
+	rTrigReset : R_TRIG;
+	//状态机
+	_State : E_EasyTempState;
+	rTrigStateReq : R_TRIG;
+	fbTemp : FB_CTRL_TempController;
+
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[ParaUpdate();
+
+
+rTrigStart(CLK:= bStart, Q=> );
+fTrigStart(CLK:= bStart, Q=> );
+rTrigTune(CLK:= bTune, Q=> );
+rTrigStateReq(CLK:= rTrigStart.Q XOR fTrigStart.Q XOR rTrigTune.Q, Q=> );
+rTrigReset(CLK:= bReset, Q=> );
+IF rTrigReset.Q THEN
+	_State := E_EasyTempState.Resetting;
+END_IF
+CASE _State OF
+E_EasyTempState.Stopped:
+	IF rTrigStateReq.Q THEN
+		IF rTrigStart.Q THEN
+			IF EasyTempPara.bTuned THEN
+				_State := E_EasyTempState.Running;
+			END_IF
+		ELSIF fTrigStart.Q THEN
+			//no action
+		ELSIF rTrigTune.Q THEN
+			_State := E_EasyTempState.Tuning;
+		END_IF
+	END_IF
+	fbTemp.eCtrlMode := E_CTRL_MODE.eCTRL_MODE_IDLE;
+	
+E_EasyTempState.Tuning:
+	IF rTrigStateReq.Q THEN
+		IF rTrigStart.Q THEN
+			//no action
+		ELSIF fTrigStart.Q THEN
+			//no action
+		ELSIF rTrigTune.Q THEN
+			//no action
+		END_IF
+	END_IF
+	IF fbTemp.eCtrlMode = E_CTRL_MODE.eCTRL_MODE_TUNE AND
+		(fbTemp.eCtrlState = E_CTRL_STATE.eCTRL_STATE_TUNED OR fbTemp.bError)THEN
+		_State := E_EasyTempState.Stopped;
+		IF fbTemp.eCtrlState = E_CTRL_STATE.eCTRL_STATE_TUNED THEN
+			EasyTempPara.stPID := fbTemp.sParaControllerInternal;
+			EasyTempPara.bTuned := TRUE;
+		END_IF
+	ELSE
+		fbTemp.eCtrlMode := E_CTRL_MODE.eCTRL_MODE_TUNE;
+	END_IF
+	
+E_EasyTempState.Running:
+	IF rTrigStateReq.Q THEN
+		IF rTrigStart.Q THEN
+			//no action
+		ELSIF fTrigStart.Q THEN
+			_State := E_EasyTempState.Stopped;
+		ELSIF rTrigTune.Q THEN
+			//no action
+		END_IF
+	END_IF
+	fbTemp.eCtrlMode := E_CTRL_MODE.eCTRL_MODE_ACTIVE;
+E_EasyTempState.Resetting:
+	fbTemp.eCtrlMode := E_CTRL_MODE.eCTRL_MODE_RESET;
+	IF fbTemp.eCtrlState = E_CTRL_STATE.eCTRL_STATE_IDLE THEN
+		_State := E_EasyTempState.Stopped;
+	END_IF
+END_CASE
+State := _State;
+
+
+
+fbTemp.sParaControllerExternal := EasyTempPara.stPID;
+fbTemp.fW1 := TargetTemp;
+fbTemp.fX := SensorTemp;
+fbTemp(
+	eCtrlMode:= , 
+	bSelSetpoint:= , 
+	fW1:= , 
+	fW2:= , 
+	fX:= , 
+	fYManual:= , 
+	bOpenThermocouple:= , 
+	bReverseThermocouple:= , 
+	bBackVoltage:= , 
+	bLeakage:= , 
+	bShortCircuit:= , 
+	bOpenCircuit:= , 
+	sParaControllerExternal:= , 
+	sControllerParameter:= EasyTempPara.stPara, 
+	fYAnalog=> fAnalog, 
+	bYPWMPos=> bPWMPos, 
+	bYPWMNeg=> bPWMNeg, 
+	bYDigPos=> bDigPos, 
+	bYDigNeg=> bDigNeg, 
+	dwAlarm=> , 
+	fMaxOverShoot=> fMaxOverShoot, 
+	tStartUpTime=> tStartUpTime, 
+	eCtrlState=> eControlState, 
+	sParaControllerInternal=> , 
+	bError=> bError, 
+	eErrorId=> eErrorId, 
+	fYP=> , 
+	fYI=> , 
+	fYD=> , 
+	fTempVelo=> fTempVelo);
+]]></ST>
+    </Implementation>
+    <Method Name="ParaUpdate" Id="{002c02c5-661a-4090-9d7c-bca1a750515f}">
+      <Declaration><![CDATA[METHOD PRIVATE ParaUpdate : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+			(*	常规参数General parameters	*)
+(* 控制器操作模式(见下方) *)
+(*
+eCTRL_ControlMode_HEATING = 1 : 加热
+eCTRL_ControlMode_COOLING = 2 : 降温
+eCTRL_ControlMode_HEATING_COOLING = 3 : 加热&降温
+*)
+EasyTempPara.stPara.iMode							:= E_CTRL_ControlMode.eCTRL_ControlMode_HEATING ;
+(* 定义发生错误后的行为 *)
+(*
+eCTRL_ReactionOnFailure_NoFailure : 没有错误
+eCTRL_ReactionOnFailure_StopController : 停止
+eCTRL_ReactionOnFailure_SetManMode : 设定为手动模式输出
+eCTRL_ReactionOnFailure_SetYMax : 设定为最大输出
+eCTRL_ReactionOnFailure_SetYMin : 设定为最小输出
+eCTRL_ReactionOnFailure_SetYMean : 设定为平均输出
+*)
+EasyTempPara.stPara.iReactionOnFailure				:= E_CTRL_ReactionOnFailure.eCTRL_ReactionOnFailure_StopController ;
+(* TRUE = 外部参数，FALSE = 内部参数 (取决于自整定) *)
+EasyTempPara.stPara.bSelCtrlParameterSet			:= TRUE;
+(* 报警掩码（见下文）。 *)
+(*
+Bit0 : 硬件:温度传感器开路,对应bOpenThermocouple引脚
+Bit1 : 硬件:温度传感器反接,对应bReverseThermocouple引脚
+Bit2 : 硬件:温度传感器电压过高,对应bBackVoltage引脚
+Bit4 : 硬件:温度传感器漏电流,对应bLeakage引脚
+Bit5 : 硬件:温度传感器短路,对应bShortCircuit引脚
+Bit6 : 硬件:温度传感器开路,对应bOpenCircuit引脚
+Bit8 : 软件:温度低于L
+Bit9 : 软件:温度低于LL
+Bit10: 软件:温度高于H
+Bit11: 软件:温度高于HH
+Bit12: 软件:温度高于AbsoluteHigh
+Bit13: 软件:温度低于AbsoluteLow
+*)
+EasyTempPara.stPara.dwAlarmSupp						:= 16#FF_FF_FF_FF ;
+(* 控制器的采样时间。在采样时间的过程中，控制器重新计算控制值。 *)
+EasyTempPara.stPara.tCtrlCycleTime					:= T#100MS	 ;
+(* 任务周期时间。用这个时间间隔调用FB。 *)
+EasyTempPara.stPara.tTaskCycleTime					:= T#10MS ;
+
+			(*	自整定参数Tuning parameters	*)
+(* 确定自整定顺序（见下文）。 *)
+EasyTempPara.stPara.iTuningMode						:= eCTRL_TuneMode_heating ;
+(* 等待时间，直到稳定后再进行自整定。 *)
+EasyTempPara.stPara.tTuneStabilisation				:= T#10S;
+(* 设定点的百分比值，从该值开始系统切换到闭环控制。 *)
+EasyTempPara.stPara.fEndTunePercentHeating			:= 100.0 ;
+(* 自整定过程中控制值的阶跃变化。 *)
+EasyTempPara.stPara.fYTuneHeating					:= 60.0 ;
+(* 加热时切换到自整定时的控制值 *)
+EasyTempPara.stPara.fYStableHeating					:= 0 ;
+(* 设定点的百分比值，从该值开始系统切换到闭环控制。 *)
+EasyTempPara.stPara.fEndTunePercentCooling			:= 20 ;
+(* 自整定过程中控制值的阶跃变化。 *)
+EasyTempPara.stPara.fYTuneCooling;
+(* 冷却时切换到自整定时的控制值 *)
+EasyTempPara.stPara.fYStableCooling;
+(* 如果不对冷却进行调整，参数切换的比例系数。 *)
+EasyTempPara.stPara.fScalingFactor;
+
+			(*	设定值参数Setpoint parameters	*)
+(* 最小设定值 *)
+EasyTempPara.stPara.fWMin							:=	 15 ;
+(* 最大设定值 *)
+EasyTempPara.stPara.fWMax							:=	 120 ;
+(* FALSE = 无软启动，TRUE = 软启动 *)
+EasyTempPara.stPara.bEnableSoftStart;
+(* FALSE = 没有斜坡，TRUE = 斜坡。 *)
+EasyTempPara.stPara.bEnableRamping;
+(* 启动时的设定值 *)
+EasyTempPara.stPara.fWStartUp							 ;
+(* 与fWStartUp设定点的时间 *)
+EasyTempPara.stPara.tStartUp						:= T#10S ;
+(* 在启动阶段打开斜坡。 *)
+EasyTempPara.stPara.bStartUpRamping					 ;
+(* 启动阶段的上升率（斜率）。 *)
+EasyTempPara.stPara.fWStartUpVeloPos				:= 0.08 ;
+(* 启动阶段的下降率（斜率）。 *)
+EasyTempPara.stPara.fWStartUpVeloNeg				:= 0.08 ;
+(* 上升率（坡道） *)
+EasyTempPara.stPara.fWVeloPos						:= 1 ;
+(* 下降率（坡道 *)
+EasyTempPara.stPara.fWVeloNeg						:= 1 ;
+
+			(*	实际值参数Actual value parameters	*)
+(* 如果为 "true"，实际值过滤器被激活。 *)
+EasyTempPara.stPara.bFilter							:= FALSE ;
+(* 实际值滤波器的时间常数（一阶P-T1滤波器） *)
+EasyTempPara.stPara.tFilter							:= T#100MS ;
+
+			(*	死区参数Deadband parameters	*)
+(* TRUE=死区开启，FALSE=死区关闭 *)
+EasyTempPara.stPara.bDeadband						:= FALSE ;
+(* 死区，单位：度 *)
+EasyTempPara.stPara.fEDeadband						:= 1.0 ;
+(* TRUE=默认输入死区，FALSE=输出死区，这个不知道什么用，新版本添加的，不用管*)
+EasyTempPara.stPara.bDeadbandOnInput;
+
+			(*	控制值参数Control value parameters	*)
+(* 过冲最小化器参数，新版本添加的，不知道啥用 *)
+EasyTempPara.stPara.bMinimizeOvershoot;
+(* 最小化器的控制误差 *)
+EasyTempPara.stPara.fEDelta;
+(* 过冲最小化器控制值 *)
+EasyTempPara.stPara.fYMinimizeOvershoot;
+(* 控制值的最小值 *)
+EasyTempPara.stPara.fYMin							:= 0 ;
+(* 控制值的最大值 *)
+EasyTempPara.stPara.fYMax							:= 100 ;
+(* 手动操作中的控制值 *)
+EasyTempPara.stPara.fYManual						:= 20 ;
+(* 出错时的控制值（可设置参数） *)
+EasyTempPara.stPara.fYOnFailure;
+(* 冷却PWM指定参数 *)
+EasyTempPara.stPara.bPWMCool;
+(* PWM信号的周期时间 *)
+EasyTempPara.stPara.tPWMCycleTime					:= T#100MS ;
+(* PWM：最小关闭时间 *)
+EasyTempPara.stPara.tPWMMinOffTime;
+(* PWM：最小开启时间 *)
+EasyTempPara.stPara.tPWMMinOnTime;
+(* PWM：从加热到冷却切换时的等待时间 *)
+EasyTempPara.stPara.tPWMWaitingTime;
+(* PWM信号的周期时间 *)
+EasyTempPara.stPara.tPWMCycleTimeCool;
+(* PWM：最小关闭时间 *)
+EasyTempPara.stPara.tPWMMinOffTimeCool;
+(* PWM：最小开启时间 *)
+EasyTempPara.stPara.tPWMMinOnTimeCool;
+(* PWM：从加热到冷却切换时的等待时间 *)
+EasyTempPara.stPara.tPWMWaitingTimeCool;
+(* 3点： 关闭阈值 *)
+EasyTempPara.stPara.fYThresholdOff;
+(* 3点： 开启阈值 *)
+EasyTempPara.stPara.fYThresholdOn;
+(* 从一个参数集过渡到另一个参数集的周期数 *)
+EasyTempPara.stPara.nCyclesForSwitchOver;
+
+			(*	控制器参数Controller parameters	*)
+(* 将预控器打开。 *)
+EasyTempPara.stPara.bEnablePreController			:= FALSE ;
+(* 将开环特性打开，直到接近设定值。 *)
+EasyTempPara.stPara.bEnableZones					:= FALSE ;
+(* 闭环控制启动时最小值低于设定值的控制误差 *)
+EasyTempPara.stPara.fEnableZoneClosedLoopZone;
+(* 在主控制器之后打开控制值过滤器。 *)
+EasyTempPara.stPara.bEnableCVFilter					:= FALSE ;
+(* 选择主控制器之后的控制值过滤器的类型（见下文）。 *)
+EasyTempPara.stPara.iFilterType						:= E_CTRL_FilterType.eCTRL_FilterType_AVERAGE ;
+(* 选择一种控制算法（见下文）。 *)
+EasyTempPara.stPara.iControllerType					:= E_CTRL_ControllerType.eCTRL_ControllerType_PID ;
+
+			(*	报警参数Alarming parameters	*)
+(* 切换到备用参数集--尚不支持 *)
+EasyTempPara.stPara.bAlternateParameter;
+(* 备用参数集的数量--尚未支持 *)
+EasyTempPara.stPara.nAlternateParameterSet;
+(* 新版本内容，暂时不用管 *)
+EasyTempPara.stPara.bPPartInFeedbackPath;
+(* 新版本内容，暂时不用管 *)
+EasyTempPara.stPara.bDPartInFeedbackPath;
+(* L *)
+EasyTempPara.stPara.TempLow							:= 80 ;
+(* LL *)
+EasyTempPara.stPara.TempLowLow						:= 90 ;
+(* H *)
+EasyTempPara.stPara.TempHigh						:= 110 ;
+(* HH *)
+EasyTempPara.stPara.TempHighHigh					:= 120 ;
+(* 绝对温度上限 *)
+EasyTempPara.stPara.TempAbsoluteHigh				:= 150 ;
+(* 绝对温度下限 *)
+EasyTempPara.stPara.TempAbsoluteLow					:= 50 ;
+
+			(*	进阶参数Expert parameters	*)
+CASE TuneMode OF
+E_TuneMode.Fast:
+	(* PID控制器的微调参数（仅适用于高级用户）。 *)
+	EasyTempPara.stPara.fTuneKp							:= 1.2 ;
+	(* PID控制器的微调参数（仅适用于高级用户）。 *)
+	EasyTempPara.stPara.fTuneTn							:= 2.0 ;
+	(* PID控制器的微调参数（仅适用于高级用户）。 *)
+	EasyTempPara.stPara.fTuneTv							:= 0.42 ;
+	(* PID控制器的微调参数（仅适用于高级用户）。 *)
+	EasyTempPara.stPara.fTuneTd							:= 0.25 ;
+	
+E_TuneMode.Normal:
+	(* PID控制器的微调参数（仅适用于高级用户）。 *)
+	EasyTempPara.stPara.fTuneKp							:= 1.0 ;
+	(* PID控制器的微调参数（仅适用于高级用户）。 *)
+	EasyTempPara.stPara.fTuneTn							:= 2.5 ;
+	(* PID控制器的微调参数（仅适用于高级用户）。 *)
+	EasyTempPara.stPara.fTuneTv							:= 0.42 ;
+	(* PID控制器的微调参数（仅适用于高级用户）。 *)
+	EasyTempPara.stPara.fTuneTd							:= 0.25 ;
+	
+E_TuneMode.Slow:
+	(* PID控制器的微调参数（仅适用于高级用户）。 *)
+	EasyTempPara.stPara.fTuneKp							:= 0.5 ;
+	(* PID控制器的微调参数（仅适用于高级用户）。 *)
+	EasyTempPara.stPara.fTuneTn							:= 3.0 ;
+	(* PID控制器的微调参数（仅适用于高级用户）。 *)
+	EasyTempPara.stPara.fTuneTv							:= 1 ;
+	(* PID控制器的微调参数（仅适用于高级用户）。 *)
+	EasyTempPara.stPara.fTuneTd							:= 0.25 ;
+
+END_CASE
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="EasyTemp">
+      <LineId Id="129" Count="2" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="89" Count="0" />
+      <LineId Id="85" Count="1" />
+      <LineId Id="171" Count="0" />
+      <LineId Id="173" Count="1" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="75" Count="0" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="106" Count="1" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="102" Count="3" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="79" Count="2" />
+      <LineId Id="108" Count="1" />
+      <LineId Id="112" Count="5" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="134" Count="0" />
+      <LineId Id="167" Count="0" />
+      <LineId Id="83" Count="0" />
+      <LineId Id="183" Count="1" />
+      <LineId Id="186" Count="0" />
+      <LineId Id="185" Count="0" />
+      <LineId Id="133" Count="0" />
+      <LineId Id="135" Count="1" />
+      <LineId Id="132" Count="0" />
+      <LineId Id="84" Count="0" />
+      <LineId Id="118" Count="1" />
+      <LineId Id="122" Count="5" />
+      <LineId Id="77" Count="0" />
+      <LineId Id="176" Count="0" />
+      <LineId Id="128" Count="0" />
+      <LineId Id="177" Count="0" />
+      <LineId Id="180" Count="2" />
+      <LineId Id="76" Count="0" />
+      <LineId Id="48" Count="5" />
+      <LineId Id="138" Count="0" />
+      <LineId Id="12" Count="29" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="145" Count="0" />
+    </LineIds>
+    <LineIds Name="EasyTemp.ParaUpdate">
+      <LineId Id="6" Count="2" />
+      <LineId Id="211" Count="1" />
+      <LineId Id="214" Count="1" />
+      <LineId Id="213" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="163" Count="0" />
+      <LineId Id="203" Count="0" />
+      <LineId Id="205" Count="5" />
+      <LineId Id="204" Count="0" />
+      <LineId Id="11" Count="3" />
+      <LineId Id="216" Count="0" />
+      <LineId Id="218" Count="11" />
+      <LineId Id="217" Count="0" />
+      <LineId Id="15" Count="15" />
+      <LineId Id="164" Count="0" />
+      <LineId Id="32" Count="44" />
+      <LineId Id="165" Count="1" />
+      <LineId Id="78" Count="13" />
+      <LineId Id="167" Count="0" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="168" Count="0" />
+      <LineId Id="95" Count="59" />
+      <LineId Id="169" Count="1" />
+      <LineId Id="173" Count="6" />
+      <LineId Id="172" Count="0" />
+      <LineId Id="201" Count="0" />
+      <LineId Id="180" Count="0" />
+      <LineId Id="184" Count="6" />
+      <LineId Id="183" Count="0" />
+      <LineId Id="202" Count="0" />
+      <LineId Id="181" Count="0" />
+      <LineId Id="194" Count="6" />
+      <LineId Id="192" Count="0" />
+      <LineId Id="191" Count="0" />
+      <LineId Id="171" Count="0" />
+      <LineId Id="162" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

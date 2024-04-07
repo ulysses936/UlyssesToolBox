@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_TimeStamp13_TO_SYSTEMTIME" Id="{cf181f6a-4a9c-464c-b58a-d3129f2009da}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_TimeStamp13_TO_SYSTEMTIME : TimeStruct
+VAR_INPUT
+	iUnixTimeStamp13 : ULINT;
+END_VAR
+VAR
+	_FileTime64 :T_FILETIME64;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[_FileTime64 := (iUnixTimeStamp13 + 11644473600000 - 5000) * 10000;
+F_TimeStamp13_TO_SYSTEMTIME := FILETIME64_TO_SYSTEMTIME(_FileTime64);]]></ST>
+    </Implementation>
+    <LineIds Name="F_TimeStamp13_TO_SYSTEMTIME">
+      <LineId Id="7" Count="0" />
+      <LineId Id="24" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

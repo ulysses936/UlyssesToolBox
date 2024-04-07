@@ -1,0 +1,418 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_TcpSendReceiving" Id="{f100cbe1-4598-4f94-a762-77f4cec0e111}" SpecialFunc="None">
+    <Declaration><![CDATA[(* 2024011902:增加了日志功能 *)
+{attribute 'hide_all_locals'}
+FUNCTION_BLOCK FB_TcpSendReceiving
+VAR_INPUT
+	bEnable : BOOL; //启用
+	bReset : BOOL; //复位
+	sRemoteIp : T_IPv4Addr; //IP地址，如192.168.0.1
+	nRemotePort : UDINT; //端口号，如60000
+	bExecute : BOOL; //发送触发
+	pSendData : POINTER TO BYTE; //发送数据起始地址
+	nSendSize : UDINT; //发送数据大小
+	pRecvData : POINTER TO BYTE; //接受数据起始地址
+	nRecvSize : UDINT; //接受数据大小
+END_VAR
+VAR_OUTPUT
+	bBusyConnect : BOOL;
+	bConnected : BOOL;
+	bBusySend : BOOL;
+	bSendDone : BOOL;
+	bBusyRecv : BOOL;
+	bRecvDone : BOOL;
+	bError : BOOL;
+	nRecvBytes : UDINT;
+	bDataReceived : BOOL;
+END_VAR
+VAR
+	//功能块调用
+	fbConnect : FB_SocketConnect;
+	fbClose : FB_SocketClose;
+	fbSend : FB_SocketSend;
+	fbRecv : FB_SocketReceive;
+	
+	//状态流转
+	stepSendRecv :UDINT;
+	stepReceiving : UDINT;
+	stepSend : UDINT;
+	
+	//连接部分
+	tonReconnect : TON;
+	hSocket : T_HSOCKET;
+	
+	//数据收发
+	rTrigSend : R_TRIG;
+	
+	tonRecv : TON;
+	tempData : ARRAY[0..MAXBUFFERSIZE] OF BYTE;
+	hr: BOOL;
+	nCountRecvErr : UDINT;
+
+END_VAR
+
+VAR CONSTANT
+	MAXBUFFERSIZE: DINT := 1023;
+	EmptyhSocket : T_HSOCKET := (handle := 0);
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* 2024011901:TCP收发功能块，单次发，一直收 *)
+(* 2024011902:增加了日志功能 *)
+IF pSendData = 0 OR pRecvData = 0  THEN
+	RETURN;
+END_IF
+//主逻辑
+_CyclicLogic();
+
+]]></ST>
+    </Implementation>
+    <Method Name="_CyclicLogic" Id="{b209b222-4241-4d47-973b-eba0902dc48c}">
+      <Declaration><![CDATA[METHOD PRIVATE _CyclicLogic : BOOL
+VAR_INPUT
+END_VAR
+VAR
+
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+tonReconnect(IN:= , PT:= T#3S, Q=> , ET=> );
+bBusyConnect := (stepSendRecv <> 20);
+bConnected := (stepSendRecv = 20);
+bError := fbConnect.bError OR fbClose.bError OR fbSend.bError OR fbRecv.bError;
+
+CASE stepSendRecv OF
+	0: //初始状态，等待TCP连接
+	fbConnect(bExecute:= FALSE);
+	fbClose(bExecute:= FALSE);
+	fbSend(bExecute:= FALSE);
+	fbRecv(bExecute := FALSE);
+	tonReconnect.IN := FALSE;
+	nCountRecvErr := 0;
+	IF bEnable AND sRemoteIp <> '' AND nRemotePort <> 0 THEN
+		stepSendRecv := 10;
+	END_IF
+
+	10: //连接中
+	fbConnect(sRemoteHost:= sRemoteIp, nRemotePort:= nRemotePort, bExecute:= TRUE);
+	IF fbConnect.bBusy THEN
+		;
+	ELSE
+		IF NOT fbConnect.bError AND (fbConnect.hSocket.handle <> 0) THEN
+			hSocket := fbConnect.hSocket;
+			stepSendRecv := 20;
+			_LogMsg(Level:=0, LogEvent:=FALSE, Msg:= 'Connected', hSocket:= hSocket);
+		ELSE
+			stepSendRecv := 12;
+		END_IF
+	END_IF
+
+	12: //重连等待
+	tonReconnect.IN := TRUE;
+	IF tonReconnect.Q THEN
+		_LogMsg(Level:=2, LogEvent:=FALSE, Msg:= 'Connect Failed, Reconnecting', hSocket:= hSocket);
+		stepSendRecv := 0;
+		tonReconnect.IN := FALSE;
+	END_IF
+
+	20: //连接完成
+	_Send();
+	hr := _Receiving(200,6);
+	IF hr = TRUE THEN
+		stepSendRecv := 30;
+	END_IF
+	
+	
+	30:
+	fbClose(hSocket:= hSocket, bExecute:= TRUE );
+	IF fbClose.bBusy THEN
+		;
+	ELSE
+		_LogMsg(Level:=2, LogEvent:=FALSE, Msg:= 'Receive Error And Socket Closed', hSocket:= hSocket);
+		hSocket := EmptyhSocket;
+		stepSendRecv := 0;
+	END_IF
+END_CASE
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_LogMsg" Id="{c38d1adb-1762-4c92-a991-b8c056169137}">
+      <Declaration><![CDATA[METHOD PRIVATE _LogMsg : BOOL
+VAR_INPUT
+	Level : INT;
+	LogEvent : BOOL;
+	Msg : T_MaxString;
+	hSocket : T_HSOCKET;
+END_VAR
+VAR
+	TcpInfo : T_MaxString;
+	MsgType: DWORD;
+	ifLog : DWORD;
+	Mask : DWORD;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Msg := CONCAT(STR1:= Msg, STR2:= ', %s');
+TcpInfo := 'Handle:';
+TcpInfo := CONCAT(STR1:= TcpInfo, STR2:= TO_STRING(hSocket.handle));
+TcpInfo := CONCAT(STR1:= TcpInfo, STR2:= ', Ip:');
+TcpInfo := CONCAT(STR1:= TcpInfo, STR2:= TO_STRING(hSocket.remoteAddr.sAddr));
+TcpInfo := CONCAT(STR1:= TcpInfo, STR2:= ', Port:');
+TcpInfo := CONCAT(STR1:= TcpInfo, STR2:= TO_STRING(hSocket.remoteAddr.nPort));
+TcpInfo := CONCAT(STR1:= TcpInfo, STR2:= ', AtPort:');
+TcpInfo := CONCAT(STR1:= TcpInfo, STR2:= TO_STRING(hSocket.localAddr.nPort));
+ifLog := SEL(LogEvent,16#0,ADSLOG_MSGTYPE_LOG);
+CASE Level OF
+0:
+	MsgType := ADSLOG_MSGTYPE_HINT;
+1:
+	MsgType := ADSLOG_MSGTYPE_WARN;
+2:
+	MsgType := ADSLOG_MSGTYPE_ERROR;
+ELSE
+	MsgType := ADSLOG_MSGTYPE_HINT;
+END_CASE
+Mask := MsgType OR ifLog;
+ADSLOGSTR(msgCtrlMask:= Mask, msgFmtStr:= Msg, strArg:= TcpInfo);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Receiving" Id="{dfe0a57f-7470-42bd-8cb9-92f92ab607ba}">
+      <Declaration><![CDATA[METHOD PRIVATE _Receiving : BOOL
+VAR_INPUT
+	CycleTime : UDINT;
+	ErrorLimit : UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[tonRecv(IN:= , PT:= UDINT_TO_TIME(CycleTime), Q=> , ET=> );
+bBusyRecv := (stepReceiving = 10 );
+bRecvDone := (stepReceiving <> 10 );
+CASE stepReceiving OF
+	0:
+	bDataReceived := FALSE;
+	tonRecv.IN := FALSE;
+	fbRecv(bExecute := FALSE);
+	stepReceiving := 10;
+	
+	10:
+	
+	fbRecv(hSocket:= hSocket, cbLen:= SIZEOF(tempData), pDest:= ADR(tempData), bExecute:= TRUE);
+	IF fbRecv.bBusy THEN
+		;
+	ELSE
+		IF fbRecv.bError THEN
+			nCountRecvErr := nCountRecvErr + 1;
+			_Receiving := (nCountRecvErr > ErrorLimit);
+		ELSE
+			nCountRecvErr := 0;
+			IF fbRecv.nRecBytes <> 0 THEN
+				MEMSET(destAddr:= pRecvData, fillByte:= 0, n:= nRecvSize);
+				MEMCPY(destAddr:= pRecvData, srcAddr:= ADR(tempData), n:= fbRecv.nRecBytes);
+				bDataReceived := TRUE;
+			END_IF
+			nRecvBytes := fbRecv.nRecBytes;
+		END_IF
+		stepReceiving := 20;
+		tonRecv.IN := TRUE;
+	END_IF
+
+	20:
+	
+	tonRecv.IN := TRUE;
+	IF tonRecv.Q THEN
+		tonRecv.IN := FALSE;
+		stepReceiving := 0;
+	END_IF
+
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Reset" Id="{690ef287-ccd6-4f7b-88c1-17b6fa7c37a0}">
+      <Declaration><![CDATA[METHOD PRIVATE _Reset : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Send" Id="{3521ce12-1995-4849-aa60-cd0e2345898d}">
+      <Declaration><![CDATA[METHOD PRIVATE _Send : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[rTrigSend(CLK:= bExecute, Q=> );
+bBusySend := (stepSend <> 0);
+bSendDone := (stepSend = 0);
+CASE stepSend OF
+	0:
+	fbSend(bExecute:= FALSE);
+	IF rTrigSend.Q THEN
+		stepSend := 10;
+
+	END_IF
+	
+	
+	10:
+	fbSend(hSocket:= hSocket, cbLen:= nSendSize, pSrc:= pSendData, bExecute:= TRUE);
+	IF fbSend.bBusy THEN
+		;
+	ELSE
+		IF fbSend.bError THEN
+			_Send := TRUE;
+		ELSE
+			;
+		END_IF
+		stepSend := 0;
+	END_IF
+	
+
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_TcpSendReceiving">
+      <LineId Id="40" Count="0" />
+      <LineId Id="548" Count="0" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="158" Count="2" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="494" Count="0" />
+      <LineId Id="493" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpSendReceiving._CyclicLogic">
+      <LineId Id="43" Count="0" />
+      <LineId Id="136" Count="0" />
+      <LineId Id="188" Count="0" />
+      <LineId Id="127" Count="0" />
+      <LineId Id="189" Count="1" />
+      <LineId Id="5" Count="1" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="175" Count="0" />
+      <LineId Id="177" Count="0" />
+      <LineId Id="176" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="185" Count="0" />
+      <LineId Id="29" Count="2" />
+      <LineId Id="14" Count="2" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="162" Count="0" />
+      <LineId Id="196" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="10" Count="1" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="200" Count="0" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="187" Count="0" />
+      <LineId Id="124" Count="1" />
+      <LineId Id="168" Count="1" />
+      <LineId Id="186" Count="0" />
+      <LineId Id="126" Count="0" />
+      <LineId Id="170" Count="0" />
+      <LineId Id="174" Count="0" />
+      <LineId Id="178" Count="1" />
+      <LineId Id="181" Count="0" />
+      <LineId Id="199" Count="0" />
+      <LineId Id="183" Count="1" />
+      <LineId Id="180" Count="0" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="18" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpSendReceiving._LogMsg">
+      <LineId Id="24" Count="0" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="38" Count="1" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="42" Count="2" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="31" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpSendReceiving._Receiving">
+      <LineId Id="18" Count="0" />
+      <LineId Id="54" Count="1" />
+      <LineId Id="5" Count="1" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="15" Count="1" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="11" Count="1" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="21" Count="2" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="47" Count="1" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="36" Count="1" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpSendReceiving._Reset">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpSendReceiving._Send">
+      <LineId Id="34" Count="0" />
+      <LineId Id="39" Count="1" />
+      <LineId Id="5" Count="1" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="35" Count="1" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="9" Count="1" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="25" Count="2" />
+      <LineId Id="29" Count="1" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="31" Count="1" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

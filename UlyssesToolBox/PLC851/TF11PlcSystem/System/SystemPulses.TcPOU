@@ -1,0 +1,296 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="SystemPulses" Id="{a7cda71a-2afc-4548-b440-cf84abb3da7e}" SpecialFunc="None">
+    <Declaration><![CDATA[{attribute 'no_check'}
+(* 
+系统脉冲 System Pulse
+提供了一些基础的脉冲，包含西门子M0.0-M0.7的脉冲，通过Property调用
+*)
+FUNCTION_BLOCK SystemPulses
+VAR_INPUT
+	EnableAll : BOOL := TRUE;
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	_T40ms : Pulse := (bEnable:= TRUE, Time_On:=T#20MS, Time_Off:=T#20MS);
+	_T100ms : Pulse := (bEnable:= TRUE, Time_On:=T#50MS, Time_Off:=T#50MS);(* 周期:100ms, 频率:10Hz, M0.0 *)
+	_T200ms : Pulse := (bEnable:= TRUE, Time_On:=T#100MS, Time_Off:=T#100MS);(* 周期:200ms, 频率:5Hz, M0.1 *)
+	_T400ms : Pulse := (bEnable:= TRUE, Time_On:=T#200MS, Time_Off:=T#200MS);(* 周期:400ms, 频率:2.5Hz, M0.2 *)
+	_T500ms : Pulse := (bEnable:= TRUE, Time_On:=T#250MS, Time_Off:=T#250MS);(* 周期:500ms, 频率:2Hz, M0.3 *)
+	_T800ms : Pulse := (bEnable:= TRUE, Time_On:=T#400MS, Time_Off:=T#400MS);(* 周期:800ms, 频率:1.25Hz, M0.4 *)
+	_T1s : Pulse := (bEnable:= TRUE, Time_On:=T#500MS, Time_Off:=T#500MS);(* 周期:1s, 频率:1Hz, M0.5 *)
+	_T1s600ms : Pulse := (bEnable:= TRUE, Time_On:=T#800MS, Time_Off:=T#800MS);(* 周期:1.6s, 频率:0.625Hz, M0.6 *)
+	_T2s : Pulse := (bEnable:= TRUE, Time_On:=T#1S, Time_Off:=T#1S);(* 周期:2s, 频率:0.5Hz, M0.7 *)
+	_T5s : Pulse := (bEnable:= TRUE, Time_On:=T#2500MS, Time_Off:=T#2500MS);(* 周期:5s, 频率:0.2Hz *)
+	_T10s : Pulse := (bEnable:= TRUE, Time_On:=T#5S, Time_Off:=T#5S);(* 周期:10s, 频率:0.1Hz *)
+	_T30s : Pulse := (bEnable:= TRUE, Time_On:=T#15S, Time_Off:=T#15S);(* 周期:30s, 频率: *)
+	_T1m : Pulse := (bEnable:= TRUE, Time_On:=T#30S, Time_Off:=T#30S);(* 周期:1m, 频率: *)
+	_T5m : Pulse := (bEnable:= TRUE, Time_On:=T#150S, Time_Off:=T#150S);(* 周期:5m, 频率: *)
+	_T10m : Pulse := (bEnable:= TRUE, Time_On:=T#300S, Time_Off:=T#300S);(* 周期:10m, 频率: *)
+	_T60m : Pulse := (bEnable:= TRUE, Time_On:=T#30M, Time_Off:=T#30M);(* 周期:60m, 频率: *)
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* 
+Title		: 系统脉冲 System Pulse
+Time		: 2023-11-13 13:25
+Version		: 1.0
+Creator		: Ulysses
+Reference	: IOTA - Blue \ Siemens
+Commecnts	: 提供了一些基础的脉冲，包含西门子M0.0-M0.7的脉冲
+*)
+IF EnableAll THEN
+	_T40ms(Q=> , RT=> , FT=> );
+	_T100ms(Q=> , RT=> , FT=> );
+	_T200ms(Q=> , RT=> , FT=> );
+	_T400ms(Q=> , RT=> , FT=> );
+	_T500ms(Q=> , RT=> , FT=> );
+	_T800ms(Q=> , RT=> , FT=> );
+	_T1s(Q=> , RT=> , FT=> );
+	_T1s600ms(Q=> , RT=> , FT=> );
+	_T2s(Q=> , RT=> , FT=> );
+	_T5s(Q=> , RT=> , FT=> );
+	_T10s(Q=> , RT=> , FT=> );
+	_T30s(Q=> , RT=> , FT=> );
+	_T1m(Q=> , RT=> , FT=> );
+	_T5m(Q=> , RT=> , FT=> );
+	_T10m(Q=> , RT=> , FT=> );
+	_T60m(Q=> , RT=> , FT=> );
+END_IF]]></ST>
+    </Implementation>
+    <Property Name="T100ms" Id="{46b16268-f19d-4b91-b043-c85719f7dd4f}">
+      <Declaration><![CDATA[PROPERTY T100ms : bool]]></Declaration>
+      <Get Name="Get" Id="{562501d6-e1de-4120-abec-15e0791eeff2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[T100ms := _T100ms.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="T10m" Id="{f2719e0b-e8b9-400f-8e6a-73ec4456793f}">
+      <Declaration><![CDATA[PROPERTY T10m : BOOL]]></Declaration>
+      <Get Name="Get" Id="{61eaca38-0046-4bc1-94ca-a5a286838753}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[T10m := _T10m.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="T10s" Id="{fa421741-227e-49f2-904d-c5886a5cb5fd}">
+      <Declaration><![CDATA[PROPERTY T10s : BOOL]]></Declaration>
+      <Get Name="Get" Id="{50e86bf6-501f-4ac4-97b1-1ea9840e2273}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[T10s := _T10s.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="T1m" Id="{83877873-cecf-4621-9b35-32ecc3e4a95d}">
+      <Declaration><![CDATA[PROPERTY T1m : BOOL]]></Declaration>
+      <Get Name="Get" Id="{78bf977b-59a9-496e-9d9a-de265455ef5c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[T1m := _T1m.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="T1s" Id="{9671654f-84fb-4a9d-aaa9-9cd3909658b6}">
+      <Declaration><![CDATA[PROPERTY T1s : BOOL]]></Declaration>
+      <Get Name="Get" Id="{1117ad7f-fc8b-46cf-93a4-46c2b25c63f8}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[T1s := _T1s.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="T1s600ms" Id="{2f776e48-f569-4c4f-9535-2bdfb4c62ac9}">
+      <Declaration><![CDATA[PROPERTY T1s600ms : BOOL]]></Declaration>
+      <Get Name="Get" Id="{ec685a6d-b321-4c8a-8cbd-358a21453786}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[T1s600ms := _T1s600ms.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="T200ms" Id="{82975a97-76e4-4449-9326-0f5bfa5840c1}">
+      <Declaration><![CDATA[PROPERTY T200ms : BOOL]]></Declaration>
+      <Get Name="Get" Id="{c6607e03-6c40-4a19-9121-7ea21586bdb4}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[T200ms := _T200ms.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="T2s" Id="{5c6ffa5a-6076-4a9c-b80d-1bcdaa269f7c}">
+      <Declaration><![CDATA[PROPERTY T2s : BOOL]]></Declaration>
+      <Get Name="Get" Id="{7aa542f0-068a-4a15-b24a-5570d8e14485}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[T2s := _T2s.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="T30s" Id="{71e37e7d-5d8e-433a-9687-1be499373723}">
+      <Declaration><![CDATA[PROPERTY T30s : BOOL]]></Declaration>
+      <Get Name="Get" Id="{d37fabf5-3071-42f3-95ef-cd501dfb24e2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[T30s := _T30s.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="T400ms" Id="{4cd24ae2-d8f9-4ed1-851e-a236464265d7}">
+      <Declaration><![CDATA[PROPERTY T400ms : BOOL]]></Declaration>
+      <Get Name="Get" Id="{1a8c14ba-c791-49a1-be75-7549553cac64}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[T400ms := _T400ms.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="T40ms" Id="{2ae839bd-c6f9-4bfd-a7af-b092cfe2e3e8}">
+      <Declaration><![CDATA[PROPERTY T40ms : bool]]></Declaration>
+      <Get Name="Get" Id="{1b03cc75-76f6-4fb8-8c48-f5dc79137fd2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[T40ms := _T40ms.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="T500ms" Id="{c921462d-6871-46d3-8391-d175c38ef412}">
+      <Declaration><![CDATA[PROPERTY T500ms : BOOL]]></Declaration>
+      <Get Name="Get" Id="{fe6df232-7f07-4ec7-9f77-7e6407bcb335}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[T500ms := _T500ms.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="T5m" Id="{4c3bb82c-a13d-4bf1-ba7e-8e7af7a8d80f}">
+      <Declaration><![CDATA[PROPERTY T5m : BOOL]]></Declaration>
+      <Get Name="Get" Id="{dbf71718-287d-42a9-a57f-f52afaa36dce}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[T5m := _T5m.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="T5s" Id="{723153f8-7518-4164-96ee-9d23ccf9cad2}">
+      <Declaration><![CDATA[PROPERTY T5s : BOOL]]></Declaration>
+      <Get Name="Get" Id="{a7a4b4aa-b626-4608-825f-d2fd58c2786c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[T5s := _T5s.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="T60m" Id="{36101d60-72d7-42a2-8de3-8163b94e5218}">
+      <Declaration><![CDATA[PROPERTY T60m : BOOL]]></Declaration>
+      <Get Name="Get" Id="{eb6e4e4c-2b6d-470b-98d1-d704f5950861}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[T60m := _T60m.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="T800ms" Id="{c4834215-0d7e-4fa9-9dd1-8f8a9c0f30a7}">
+      <Declaration><![CDATA[PROPERTY T800ms : BOOL]]></Declaration>
+      <Get Name="Get" Id="{f284b0b8-88b4-438f-8549-53067c5ae23f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[T800ms := _T800ms.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <LineIds Name="SystemPulses">
+      <LineId Id="63" Count="6" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="48" Count="13" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemPulses.T100ms.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemPulses.T10m.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemPulses.T10s.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemPulses.T1m.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemPulses.T1s.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemPulses.T1s600ms.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemPulses.T200ms.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemPulses.T2s.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemPulses.T30s.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemPulses.T400ms.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemPulses.T40ms.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemPulses.T500ms.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemPulses.T5m.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemPulses.T5s.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemPulses.T60m.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemPulses.T800ms.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

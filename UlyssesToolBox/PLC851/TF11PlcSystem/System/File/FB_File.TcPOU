@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_File" Id="{4b87f0fb-3446-4e32-bd0a-78e268c1e56e}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_File
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	fbFileOpen : FB_FileOpen;
+	fbFileClose : FB_FileClose;
+	fbFileLoad : FB_FileLoad;
+	fileBuffer : ARRAY[0..99] OF BYTE;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fbFileLoad(
+	sNetId:= , 
+	sPathName:= 'c:\TEMP\LOG.txt', 
+	pReadBuff:= ADR(fileBuffer), 
+	cbReadLen:= SIZEOF(fileBuffer), 
+	bExecute:= , 
+	tTimeout:= , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	cbRead=> );]]></ST>
+    </Implementation>
+    <LineIds Name="FB_File">
+      <LineId Id="14" Count="9" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

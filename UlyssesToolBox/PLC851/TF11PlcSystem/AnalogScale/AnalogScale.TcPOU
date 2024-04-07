@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="AnalogScale" Id="{f315378d-f714-4055-9d76-85399fb91ae3}" SpecialFunc="None">
+    <Declaration><![CDATA[(* OutputValue := InputValue * (OutputMax - OutputMin)/(InputMax - InputMin) + OutputMin *)
+FUNCTION_BLOCK AnalogScale
+VAR_INPUT
+	InputValue	: LREAL;
+	InputMin	: LREAL:=0;
+	InputMax	: LREAL:=100;
+	OutputMin	: LREAL:=0;
+	OutputMax	: LREAL:=100;
+END_VAR
+VAR_OUTPUT
+	OutputValue	: LREAL;
+	Percentage : LREAL;
+	DataInvalid : BOOL;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF InputMax - InputMin = 0 THEN
+	DataInvalid := TRUE;
+ELSE
+	OutputValue := InputValue * (OutputMax - OutputMin)/(InputMax - InputMin) + OutputMin;
+	Percentage := (InputValue - InputMin)/(InputMax - InputMin);
+	DataInvalid := FALSE;
+END_IF
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="AnalogScale">
+      <LineId Id="35" Count="1" />
+      <LineId Id="38" Count="1" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="33" Count="1" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

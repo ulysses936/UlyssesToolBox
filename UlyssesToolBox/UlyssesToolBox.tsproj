@@ -18,7 +18,7 @@
 		</System>
 		<Plc>
 			<Project GUID="{6D64EF4C-4EF0-4BF0-BE53-DB463F347D0B}" Name="PLC851" PrjFilePath="PLC851\PLC851.plcproj" TmcFilePath="PLC851\PLC851.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" SymbolicMapping="true">
-				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="PLC851\PLC851.tmc" TmcHash="{A535D791-72DE-7362-9E89-1ABFD588787E}">
+				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="PLC851\PLC851.tmc" TmcHash="{1416B336-D3D5-5EFE-38E7-D38B37CB1BC3}">
 					<Name>PLC851 Instance</Name>
 					<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
 					<Contexts>

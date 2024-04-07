@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
-  <POU Name="FB_TcpSendReceiving" Id="{11aa6855-73f2-4b06-a2d2-8a40a5343dc1}" SpecialFunc="None">
+  <POU Name="FB_TcpSendReceivingHistroy" Id="{11aa6855-73f2-4b06-a2d2-8a40a5343dc1}" SpecialFunc="None">
     <Declaration><![CDATA[{attribute 'hide_all_locals'}
-FUNCTION_BLOCK FB_TcpSendReceiving
+FUNCTION_BLOCK FB_TcpSendReceivingHistroy
 VAR_INPUT
 	bEnable 			: BOOL; 								//启用
 	bReset 				: BOOL; 								//复位,目前设置了自动重连,所以该输入没实现
@@ -219,7 +219,7 @@ CASE stepSend OF
 END_CASE]]></ST>
       </Implementation>
     </Method>
-    <LineIds Name="FB_TcpSendReceiving">
+    <LineIds Name="FB_TcpSendReceivingHistroy">
       <LineId Id="40" Count="0" />
       <LineId Id="118" Count="0" />
       <LineId Id="158" Count="2" />
@@ -227,7 +227,7 @@ END_CASE]]></ST>
       <LineId Id="494" Count="0" />
       <LineId Id="493" Count="0" />
     </LineIds>
-    <LineIds Name="FB_TcpSendReceiving._CyclicLogic">
+    <LineIds Name="FB_TcpSendReceivingHistroy._CyclicLogic">
       <LineId Id="166" Count="0" />
       <LineId Id="164" Count="0" />
       <LineId Id="43" Count="0" />
@@ -276,7 +276,7 @@ END_CASE]]></ST>
       <LineId Id="19" Count="0" />
       <LineId Id="18" Count="0" />
     </LineIds>
-    <LineIds Name="FB_TcpSendReceiving._Receiving">
+    <LineIds Name="FB_TcpSendReceivingHistroy._Receiving">
       <LineId Id="18" Count="0" />
       <LineId Id="54" Count="1" />
       <LineId Id="5" Count="1" />
@@ -311,7 +311,7 @@ END_CASE]]></ST>
       <LineId Id="8" Count="0" />
       <LineId Id="7" Count="0" />
     </LineIds>
-    <LineIds Name="FB_TcpSendReceiving._Send">
+    <LineIds Name="FB_TcpSendReceivingHistroy._Send">
       <LineId Id="34" Count="0" />
       <LineId Id="39" Count="1" />
       <LineId Id="5" Count="1" />

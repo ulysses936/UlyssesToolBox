@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="Pulse" Id="{cfb0da2d-6d0f-48fa-ac2b-8b187e367461}" SpecialFunc="None">
+    <Declaration><![CDATA[{attribute 'no_check'}
+(* 
+脉冲生成器 Pulse Generator
+设定On\Off时间，生成指定的脉冲
+*)
+FUNCTION_BLOCK Pulse
+VAR_INPUT
+	bEnable					: BOOL	:= FALSE;	(*开始*)
+	Time_On : TIME; (* TIME, On脉冲时间, 最小时间为扫描周期两倍 *)
+	Time_Off : TIME; (* TIME, Off脉冲时间, 最小时间为扫描周期两倍 *)
+END_VAR
+VAR_OUTPUT
+	Q	: BOOL; (* BOOL, 脉冲输出 *)
+	RT	: BOOL; (* BOOL, 脉冲输出上升沿 *)
+	FT	: BOOL; (* BOOL, 脉冲输出下降沿 *)
+END_VAR
+VAR
+	TonOff, TonOn				: TON;
+	rTrig	: R_TRIG;
+	fTrig	: F_TRIG;
+	
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* 
+Title		: 脉冲生成器 Pulse Generator
+Time		: 2023-11-13 13:26
+Version		: 1.0
+Creator		: Ulysses
+Reference	: Beckhoff_GZ - Lib_Basic
+Commecnts	: 这个程序生成的脉冲就不会受到扫描周期的影响, On\Off信号最小时间为扫描周期两倍，即最小脉冲周期为扫描周期四倍
+*)
+;
+(* tonOn出发 *)
+TonOff(IN := bEnable, PT := Time_Off);
+TonOn(IN := TonOff.Q, PT := Time_On);
+IF TonOn.Q THEN
+(* 当计时器2输出信号时，复位并重启计时器1 *)
+	TonOff(IN := FALSE);
+	TonOff(IN := bEnable, PT := Time_On);
+END_IF
+(* 输出必须放在最后，不然会导致On信号多一个周期，Off信号少一个周期 *)
+Q := TonOff.Q;
+rTrig(CLK:= TonOff.Q, Q=> RT);
+fTrig(CLK:= TonOff.Q, Q=> FT);]]></ST>
+    </Implementation>
+    <LineIds Name="Pulse">
+      <LineId Id="225" Count="18" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="247" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="Input" Id="{c0f2660c-3dd6-42c6-9c63-6749d449a728}" SpecialFunc="None">
+    <Declaration><![CDATA[{attribute 'no_check'}
+(* 
+输入功能块 DI_Input
+输入功能块，可以将输入信号强制、反转或延迟，和按钮差不多，默认延迟为0
+*)
+FUNCTION_BLOCK Input
+VAR_INPUT
+	Enable : BOOL := TRUE; (* 默认为True, False:不启用,除LED外输入无效  \ True:启用 *)
+	Invert : BOOL := FALSE; (* False: 不反转Direct \ True: 在源头反转输入Invert Input *)
+	Force : BOOL; (* 将输入强制为True, Force the In signal to True *)
+	TrigOnDelay : BOOL; (* 手动将延迟后的Toggle模式输出置为True, 复位优先 *)
+	TrigOffDelay : BOOL; (* 手动将延迟后的Toggle模式输出置为False, 复位优先 *)
+	DelayTime : TIME := T#0MS; (* 延迟输出时间，默认为T#0MS，代表无延迟 *)
+
+END_VAR
+VAR_OUTPUT
+	Q_NoDelay : BOOL;(* 直接输出信号 *)
+	Q : BOOL;(* 经过延迟后的输出信号,默认延迟0 *)
+	Q_RT : BOOL;(* 经过延迟后的输出信号的上升沿,默认延迟0 *)
+	Q_FT : BOOL;(* 经过延迟后的输出信号的上升沿,默认延迟0 *)
+	Q_Tog : BOOL;(* 经过延迟后的Toggle模式输出,默认延迟0,按一下切换为True，再按一下切换为False *)
+	RawIn AT%I* :BOOL; (* 原始输入信号，未经强制、反转及延时 *) 
+END_VAR
+VAR
+	rTrig_Delay : R_TRIG;
+	fTrig_Delay : F_TRIG;
+	tonDelay : TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+TIME		: 2023-11-15 17:44
+Version		: 1.0
+Creator		: Ulysses
+Reference	: IOTA - BLUE
+Commecnts	: 输入功能块，可以将输入信号强制、反转或延迟，和按钮功能块差不多
+*)
+(* 不带延迟 *)
+Q_NoDelay			:= ((RawIn OR Force) XOR Invert) AND Enable;
+
+(* 带延迟 *)
+tonDelay(IN:= Q_NoDelay, PT:= DelayTime);
+Q		:= tonDelay.Q;
+rTrig_Delay(CLK:= Q);
+Q_RT	:= rTrig_Delay.Q;
+fTrig_Delay(CLK:= Q);
+Q_FT	:= fTrig_Delay.Q;
+
+Q_Tog := NOT (TrigOffDelay AND Enable) AND (Q_RT XOR Q_Tog OR (TrigOnDelay AND Enable));
+]]></ST>
+    </Implementation>
+    <LineIds Name="Input">
+      <LineId Id="280" Count="18" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
