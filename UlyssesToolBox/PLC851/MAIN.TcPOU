@@ -24,7 +24,7 @@ END_VAR
 	nData:= LEN(STR1), 
 	pHash:= ADR(MD5), 
 	nHash:= 16);
-
+//xiugai
 dint1 := 2030/100;
 dint2 := 2030 MOD 100;
 bool1 := FAILED(0);
