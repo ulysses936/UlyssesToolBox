@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_FileHandler" Id="{2c918a86-39ee-4304-b138-735a315529dc}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_FileHandler
+VAR_INPUT
+	sNetId: T_AmsNetId;
+	sPathName: T_MaxString;
+	
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	fbFileOpen : FB_FileOpen;
+	fbFileClose : FB_FileClose;
+	fbFileSeek : FB_FileSeek;
+	fbFileTell : FB_FileTell;
+	
+	
+	stepGetFileSize : INT;
+	_hFile: UINT;
+	
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fbFileOpen(
+	sNetId:= sNetId, 
+	sPathName:= sPathName, 
+	nMode:= FOPEN_MODEREAD OR FOPEN_MODEPLUS OR FOPEN_MODEBINARY, 
+	ePath:= PATH_GENERIC, 
+	bExecute:= , 
+	tTimeout:= DEFAULT_ADS_TIMEOUT, 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	hFile=> _hFile);]]></ST>
+    </Implementation>
+    <Method Name="GetFileSize" Id="{9b179687-9024-4361-8d36-60346d911616}">
+      <Declaration><![CDATA[METHOD GetFileSize : UDINT
+VAR_INPUT
+END_VAR
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE stepGetFileSize OF
+0:
+	
+
+
+
+
+
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Open" Id="{2dc6a26f-5d67-458f-9aea-067323bf8136}">
+      <Declaration><![CDATA[METHOD Open : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+fbFileOpen(bExecute := TRUE);
+IF  NOT fbFileOpen.bBusy AND NOT fbFileOpen.bError THEN
+	Open := TRUE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_FileHandler">
+      <LineId Id="61" Count="9" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_FileHandler.GetFileSize">
+      <LineId Id="5" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="12" Count="3" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="10" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_FileHandler.Open">
+      <LineId Id="6" Count="4" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

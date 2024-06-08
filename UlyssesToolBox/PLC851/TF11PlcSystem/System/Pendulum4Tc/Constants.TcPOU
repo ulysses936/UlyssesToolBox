@@ -1,0 +1,118 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="Constants" Id="{e40bf68c-1ac5-44e5-93be-636105192943}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK Constants
+VAR_INPUT
+
+// Number of X in Y.
+YEARS_PER_CENTURY : DINT := 100;
+YEARS_PER_DECADE : DINT := 10;
+MONTHS_PER_YEAR : DINT := 12;
+WEEKS_PER_YEAR : DINT := 52;
+DAYS_PER_WEEK : DINT := 7;
+HOURS_PER_DAY : DINT := 24;
+MINUTES_PER_HOUR : DINT := 60;
+SECONDS_PER_MINUTE : DINT := 60;
+SECONDS_PER_HOUR : DINT := MINUTES_PER_HOUR * SECONDS_PER_MINUTE;
+SECONDS_PER_DAY : DINT := HOURS_PER_DAY * SECONDS_PER_HOUR;
+US_PER_SECOND : DINT := 1000000;
+
+
+// Formats
+ATOM : STRING := 'YYYY-MM-DDTHH:mm:ssZ';
+COOKIE : STRING := 'dddd, DD-MMM-YYYY HH:mm:ss zz';
+ISO8601 : STRING := 'YYYY-MM-DDTHH:mm:ssZ';
+ISO8601_EXTENDED : STRING := 'YYYY-MM-DDTHH:mm:ss.SSSSSSZ';
+RFC822 : STRING := 'ddd, DD MMM YY HH:mm:ss ZZ';
+RFC850 : STRING := 'dddd, DD-MMM-YY HH:mm:ss zz';
+RFC1036 : STRING := 'ddd, DD MMM YY HH:mm:ss ZZ';
+RFC1123 : STRING := 'ddd, DD MMM YYYY HH:mm:ss ZZ';
+RFC2822 : STRING := 'ddd, DD MMM YYYY HH:mm:ss ZZ';
+RFC3339 : STRING := ISO8601;
+RFC3339_EXTENDED : STRING := ISO8601_EXTENDED;
+RSS : STRING := 'ddd, DD MMM YYYY HH:mm:ss ZZ';
+W3C : STRING := ISO8601;
+
+
+EPOCH_YEAR : DINT := 1970;
+
+DAYS_PER_N_YEAR : DINT := 365;
+DAYS_PER_L_YEAR : DINT := 366;
+
+USECS_PER_SEC : DINT := 1000000;
+
+SECS_PER_MIN : DINT := 60;
+SECS_PER_HOUR : DINT := 60 * SECS_PER_MIN;
+SECS_PER_DAY : DINT := SECS_PER_HOUR * 24;
+
+// 400-year chunks always have 146097 days (20871 weeks).
+SECS_PER_400_YEARS : DINT := 146097 * SECS_PER_DAY;
+
+// The number OF seconds in an aligned 100-year chunk, FOR those that
+// do not begin with a leap year and those that do respectively.
+SECS_PER_100_YEARS : ARRAY[0..1] OF DINT := [
+    (76 * DAYS_PER_N_YEAR + 24 * DAYS_PER_L_YEAR) * SECS_PER_DAY,
+    (75 * DAYS_PER_N_YEAR + 25 * DAYS_PER_L_YEAR) * SECS_PER_DAY
+];
+
+// The number OF seconds in an aligned 4-year chunk, FOR those that
+// do not begin with a leap year and those that do respectively.
+SECS_PER_4_YEARS : ARRAY[0..1] OF DINT := [
+    (4 * DAYS_PER_N_YEAR + 0 * DAYS_PER_L_YEAR) * SECS_PER_DAY,
+    (3 * DAYS_PER_N_YEAR + 1 * DAYS_PER_L_YEAR) * SECS_PER_DAY
+];
+
+
+// The number of seconds in non-leap and leap years respectively.
+SECS_PER_YEAR : ARRAY[0..1] OF DINT := [DAYS_PER_N_YEAR * SECS_PER_DAY, DAYS_PER_L_YEAR * SECS_PER_DAY];
+
+DAYS_PER_YEAR : ARRAY[0..1] OF DINT := [DAYS_PER_N_YEAR, DAYS_PER_L_YEAR];
+
+// The month lengths in non-leap and leap years respectively.
+DAYS_PER_MONTHS : ARRAY[0..1] OF ARRAY[0..12] OF DINT := [
+    [-1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
+    [-1, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+];
+
+// The day offsets of the beginning of each (1-based) month in non-leap
+// and leap years respectively.
+// For example, in a leap year there are 335 days before December.
+MONTHS_OFFSETS : ARRAY[0..1] OF ARRAY[0..12] OF DINT := [
+    [-1, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365],
+    [-1, 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366]
+];
+
+DAY_OF_WEEK_TABLE : ARRAY[0..11] OF DINT := [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
+
+
+TM_SUNDAY : DINT := 0;
+TM_MONDAY : DINT := 1;
+TM_TUESDAY : DINT := 2;
+TM_WEDNESDAY : DINT := 3;
+TM_THURSDAY : DINT := 4;
+TM_FRIDAY : DINT := 5;
+TM_SATURDAY : DINT := 6;
+
+TM_JANUARY : DINT := 0;
+TM_FEBRUARY : DINT := 1;
+TM_MARCH : DINT := 2;
+TM_APRIL : DINT := 3;
+TM_MAY : DINT := 4;
+TM_JUNE : DINT := 5;
+TM_JULY : DINT := 6;
+TM_AUGUST : DINT := 7;
+TM_SEPTEMBER : DINT := 8;
+TM_OCTOBER : DINT := 9;
+TM_NOVEMBER : DINT := 10;
+TM_DECEMBER : DINT := 11;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <LineIds Name="Constants">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

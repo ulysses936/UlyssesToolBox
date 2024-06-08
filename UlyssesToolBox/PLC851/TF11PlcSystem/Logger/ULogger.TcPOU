@@ -1,0 +1,393 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="ULogger" Id="{88eb38f2-102f-4211-b51e-2ddca3bf26e5}" SpecialFunc="None">
+    <Declaration><![CDATA[{attribute 'enable_dynamic_creation'}
+FUNCTION_BLOCK ULogger
+VAR_INPUT
+	bEnable : BOOL;
+	bReset : BOOL;
+	nBufferSizeSet : UDINT;
+	bEnableEventLogger : BOOL;
+	bEnableFileLogger : BOOL;
+	eSplitLogFileMode : E_LogFileSplitMode := E_LogFileSplitMode.eSplitByDay;
+	sLogFilePath : T_MaxString := 'C:\';
+	tAutoSave : TIME := T#3M;
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	pBufferUsing : POINTER TO BYTE;
+	pBufferSaving : POINTER TO BYTE;
+	nBufferTotalSize : UDINT;
+	nBufferUsedSize : UDINT;
+	nBufferSaveSize : UDINT;
+	tStartUse : TIME;
+	
+	bWriteFileRequest : BOOL;
+	
+	stepWriteFile : INT;
+	hFile : UINT;
+	fbFileOpen : FB_FileOpen;
+	fbFileWrite : FB_FileWrite;
+	fbFileClose : FB_FileClose;
+	
+	
+	sFilePathName : T_MaxString;
+	
+	bError : BOOL;
+	
+	tonAutoSave : TON;
+	tCycleTime : UDINT;
+	tPassedTime : UDINT;
+	ttimesave: UDINT;
+	ttimesavelmt : UDINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+AutoSave();
+
+CASE stepWriteFile OF
+	0:
+	IF bWriteFileRequest AND NOT bError THEN
+		stepWriteFile := 10;
+	ELSIF bError AND bReset THEN
+		fbFileOpen(bExecute:= FALSE);
+		fbFileWrite(bExecute:= FALSE);
+		fbFileClose(bExecute:= FALSE);
+		bError := FALSE;
+		IF hFile <> 0 THEN
+			stepWriteFile := 30;
+		END_IF
+	END_IF
+	10:
+	sFilePathName := HandelLogFilePath(SplitLogFileMode:= eSplitLogFileMode, LogFilePath:= sLogFilePath);
+
+	fbFileOpen(sPathName:= sFilePathName, 
+		nMode:= FOPEN_MODEAPPEND OR FOPEN_MODETEXT OR FOPEN_MODEPLUS, 
+		bExecute:= TRUE);
+	IF NOT fbFileOpen.bBusy THEN
+		IF NOT fbFileOpen.bError THEN
+			hFile := fbFileOpen.hFile;
+			stepWriteFile := 20;
+		ELSE
+			stepWriteFile := 0;
+			bError := TRUE;
+		END_IF
+		fbFileOpen(bExecute:= FALSE);
+	END_IF
+	20:
+	fbFileWrite(
+		hFile:= hFile, 
+		pWriteBuff:= pBufferSaving, 
+		cbWriteLen:= nBufferSaveSize, 
+		bExecute:= TRUE);
+	IF NOT fbFileWrite.bBusy THEN
+		IF NOT fbFileWrite.bError THEN
+			stepWriteFile := 30;
+		ELSE
+			stepWriteFile := 0;
+			bError := TRUE;
+		END_IF
+		fbFileWrite(bExecute:= FALSE);
+	END_IF
+	30:
+	fbFileClose(
+		hFile:= hfile, 
+		bExecute:= TRUE);
+	IF NOT fbFileClose.bBusy THEN
+		IF NOT fbFileClose.bError THEN
+			hFile := 0;
+			stepWriteFile := 0;
+			bWriteFileRequest := FALSE;
+		ELSE
+			hFile := 0;
+			bError := TRUE;
+			stepWriteFile := 0;
+		END_IF
+		fbFileClose(bExecute:= FALSE);
+	END_IF
+END_CASE]]></ST>
+    </Implementation>
+    <Method Name="AutoSave" Id="{79fb75be-df66-4580-bf4f-cedcee25ac72}">
+      <Declaration><![CDATA[METHOD AutoSave : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF tCycleTime = 0 THEN
+	tCycleTime := TwinCAT_SystemInfoVarList._TaskInfo[GETCURTASKINDEXEX()].CycleTime / 10_000;
+END_IF
+IF nBufferUsedSize > 0 THEN
+	tPassedTime := tPassedTime + tCycleTime;
+END_IF
+
+ttimesave := TIME_TO_UDINT(tAutoSave);
+ttimesavelmt := LIMIT(60_000, ttimesave, 9999_000);
+IF tPassedTime >= ttimesavelmt THEN
+	SaveBufferNow();
+	tPassedTime := 0;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="CreateBuffer" Id="{3366018b-dde4-46fc-9ad0-77d44e3614fb}">
+      <Declaration><![CDATA[METHOD CreateBuffer : BOOL
+VAR_INPUT
+END_VAR
+VAR
+	pTemp : POINTER TO BYTE;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nBufferSizeSet = 0 THEN
+	RETURN;
+END_IF
+IF nBufferSizeSet > nBufferTotalSize THEN
+	(* 创建使用中缓冲区 *)
+	pTemp := __NEW(BYTE, nBufferSizeSet);
+	IF pBufferUsing <>0 THEN
+		MEMCPY(destAddr:= pTemp, srcAddr:= pBufferUsing, n:= nBufferTotalSize);
+		__DELETE(pBufferUsing);
+	END_IF
+	pBufferUsing := pTemp;
+	
+	
+	(* 创建保存中缓冲区 *)
+	pTemp := __NEW(BYTE, nBufferSizeSet);
+	IF pBufferSaving <> 0 THEN
+		MEMCPY(destAddr:= pTemp, srcAddr:= pBufferSaving, n:= nBufferTotalSize);
+		__DELETE(pBufferSaving);
+	END_IF
+	pBufferSaving := pTemp;
+	
+	nBufferTotalSize := nBufferSizeSet;
+	CreateBuffer := TRUE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="FB_exit" Id="{4ea6ddcd-abf3-476a-9db3-10d3a32598c6}">
+      <Declaration><![CDATA[METHOD FB_exit : BOOL
+VAR_INPUT
+	bInCopyCode : BOOL; // if TRUE, the exit method is called for exiting an instance that is copied afterwards (online change).
+END_VAR
+
+VAR
+	pBuffer1: INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bInCopyCode THEN
+	IF pBufferUsing <> 0 THEN
+		__DELETE(pBufferUsing);
+	END_IF
+	IF pBufferSaving <> 0 THEN
+		__DELETE(pBufferSaving);
+	END_IF
+	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="HandelLogFilePath" Id="{37122512-8f23-45d3-9e14-edf08a6fcee2}">
+      <Declaration><![CDATA[METHOD HandelLogFilePath : T_MaxString
+VAR_INPUT
+	SplitLogFileMode : E_LogFileSplitMode;
+	LogFilePath : T_MaxString;
+END_VAR
+
+VAR
+	timestr: DCTIMESTRUCT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF SplitLogFileMode = E_LogFileSplitMode.eDontSplit THEN
+	HandelLogFilePath := CONCAT(LogFilePath, 'Log.log');
+ELSIF eSplitLogFileMode = E_LogFileSplitMode.eSplitByDay THEN
+	HandelLogFilePath := CONCAT(LogFilePath, LEFT(STR:= DCTIME64_TO_STRING(F_GetCurDcTaskTime64()), SIZE:= 10));
+	HandelLogFilePath := CONCAT(HandelLogFilePath, '.log');
+ELSIF eSplitLogFileMode = E_LogFileSplitMode.eSplitByHour THEN
+	HandelLogFilePath := CONCAT(LogFilePath, LEFT(STR:= DCTIME64_TO_STRING(F_GetCurDcTaskTime64()), SIZE:= 13));
+	HandelLogFilePath := CONCAT(HandelLogFilePath, '.log');
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SaveBufferNow" Id="{fcb27f42-13cd-4ac5-a0d6-f2c79974c0bd}">
+      <Declaration><![CDATA[METHOD SaveBufferNow : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[MEMCPY(destAddr:= pBufferSaving, srcAddr:= pBufferUsing, n:= nBufferTotalSize);
+nBufferSaveSize := nBufferUsedSize;
+nBufferUsedSize := 0;
+bWriteFileRequest := TRUE;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="WriteData" Id="{54dca3e7-18ef-416a-b52d-7255d250d639}">
+      <Declaration><![CDATA[METHOD WriteData : BOOL
+VAR_INPUT
+	pData : POINTER TO BYTE;
+	nSize : UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF pData = 0 OR nSize = 0 THEN
+	RETURN;
+END_IF
+IF nBufferSizeSet > nBufferTotalSize THEN
+	IF NOT CreateBuffer() THEN
+		RETURN;
+	END_IF
+END_IF
+IF nBufferUsedSize = 0 THEN
+	tStartUse := TIME();
+	IF nSize > nBufferTotalSize THEN
+		RETURN;
+	END_IF
+END_IF
+IF nBufferUsedSize + nSize > nBufferTotalSize THEN
+	SaveBufferNow();
+END_IF
+
+MEMCPY(destAddr:= pBufferUsing + nBufferUsedSize, srcAddr:= pData, n:= nSize);
+tPassedTime := 0;
+nBufferUsedSize := nBufferUsedSize + nSize;
+WriteData := TRUE;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="WriteLog" Id="{ce6bb74a-b56f-4bac-aef0-6b46e6dd9d9a}">
+      <Declaration><![CDATA[METHOD WriteLog : BOOL
+VAR_INPUT
+	LogStr : T_MaxString;
+END_VAR
+VAR
+	Tempstr : STRING;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Tempstr := CONCAT(Tempstr, LEFT(STR:= DCTIME64_TO_STRING(in:= F_GetActualDcTime64()), SIZE:= 27));
+Tempstr := CONCAT(Tempstr, ' : ');
+Tempstr := CONCAT(Tempstr, LogStr);
+Tempstr := CONCAT(Tempstr, '$R');
+WriteData(pData:= ADR(Tempstr), nSize:= INT_TO_UDINT(LEN(Tempstr)));]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="ULogger">
+      <LineId Id="158" Count="1" />
+      <LineId Id="153" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="42" Count="1" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="95" Count="1" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="141" Count="2" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="173" Count="0" />
+      <LineId Id="166" Count="0" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="75" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="84" Count="0" />
+      <LineId Id="86" Count="2" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="85" Count="0" />
+      <LineId Id="138" Count="0" />
+      <LineId Id="83" Count="0" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="99" Count="0" />
+      <LineId Id="101" Count="2" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="109" Count="0" />
+      <LineId Id="111" Count="0" />
+      <LineId Id="113" Count="2" />
+      <LineId Id="112" Count="0" />
+      <LineId Id="133" Count="0" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="120" Count="0" />
+      <LineId Id="116" Count="1" />
+      <LineId Id="125" Count="0" />
+      <LineId Id="127" Count="0" />
+      <LineId Id="129" Count="0" />
+      <LineId Id="146" Count="0" />
+      <LineId Id="144" Count="0" />
+      <LineId Id="154" Count="0" />
+      <LineId Id="145" Count="0" />
+      <LineId Id="147" Count="0" />
+      <LineId Id="128" Count="0" />
+      <LineId Id="130" Count="0" />
+      <LineId Id="126" Count="0" />
+      <LineId Id="41" Count="0" />
+    </LineIds>
+    <LineIds Name="ULogger.AutoSave">
+      <LineId Id="9" Count="0" />
+      <LineId Id="12" Count="1" />
+      <LineId Id="18" Count="2" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="ULogger.CreateBuffer">
+      <LineId Id="5" Count="0" />
+      <LineId Id="7" Count="2" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="20" Count="1" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="16" Count="3" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="11" Count="0" />
+    </LineIds>
+    <LineIds Name="ULogger.FB_exit">
+      <LineId Id="7" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="18" Count="1" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="15" Count="0" />
+    </LineIds>
+    <LineIds Name="ULogger.HandelLogFilePath">
+      <LineId Id="8" Count="3" />
+      <LineId Id="16" Count="3" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="ULogger.SaveBufferNow">
+      <LineId Id="6" Count="1" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="8" Count="0" />
+    </LineIds>
+    <LineIds Name="ULogger.WriteData">
+      <LineId Id="35" Count="18" />
+      <LineId Id="55" Count="0" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="29" Count="0" />
+    </LineIds>
+    <LineIds Name="ULogger.WriteLog">
+      <LineId Id="5" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="12" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

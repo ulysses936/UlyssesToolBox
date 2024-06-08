@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_PtInterval" Id="{7eb7558e-4186-43f6-827a-bf1a6c972e8f}">
+    <Declaration><![CDATA[INTERFACE I_PtInterval
+]]></Declaration>
+    <Method Name="inMonth" Id="{82085986-cc9e-4b47-9546-54f8ea9d238f}">
+      <Declaration><![CDATA[METHOD inMonth : DINT
+VAR_INPUT
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="inYears" Id="{c6e79af5-8c14-4568-9b6f-c8872f07cf34}">
+      <Declaration><![CDATA[METHOD inYears : DINT
+VAR_INPUT
+END_VAR
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

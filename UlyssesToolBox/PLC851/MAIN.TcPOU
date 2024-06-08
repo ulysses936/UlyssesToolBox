@@ -3,129 +3,114 @@
   <POU Name="MAIN" Id="{5acbb519-50b6-4a11-9b3f-9b411aa3ed7d}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM MAIN
 VAR
-	tcpTest : FB_TcpSendReceivingQueue;
-	tcpTest2 : FB_TcpSendReceiving;
-	bAddTask: BOOL;
-	arrData : ARRAY[0..255] OF BYTE;
-	arrRecv : ARRAY[0..255] OF BYTE;
-	bool1 : BOOL;
-	bool2 : BOOL;
-	dint1 : DINT;
-	dint2 :DINT;
-	STR1:STRING;
-	MD5 : ARRAY[0..31] OF BYTE;
-	MD5STR : STRING;
+	timesource : PtTimeSource;
+	//fbPendulum : Pendulum4Tc;
+	fileLogger : DataFileLogger;
+	Day : DINT;
+	pt1 : PtDateTime;
+	pt2: ptdatetime;
+	diff1: PtInterval;
+	diffyear: DINT;
+	diffyear2: DINT;
+	pt3: PtDateTime;
+	DAYNUM1: DINT;
+	DAYNUM2 : DINT;
+
+	systemappinfo : System_AppInfo;
+	testLog: BOOL;
+	aa: ARRAY[0..10] OF BYTE;
+	ulogger1 : ULogger;
+	bTestUlogger : BOOL;
+	String1 : STRING(255) := '';
+	tonWriteLog : TON;
+	systemtaskinfo : System_TaskInfo;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[F_GenerateHashValue(
-	hashMode:= Tc2_Utilities.E_HashMode.HASH_MD5, 
-	pData:= ADR(STR1), 
-	nData:= LEN(STR1), 
-	pHash:= ADR(MD5), 
-	nHash:= 16);
-// 测试同时向两个仓库推送2
-dint1 := 2030/100;
-dint2 := 2030 MOD 100;
-bool1 := FAILED(0);
-bool2 := FAILED(16#80000013);
-IF bAddTask THEN
-	bAddTask := FALSE;
-	arrData[0] := 67;
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	arrData[0] := 68;
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	arrData[0] := 69;
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	arrData[0] := 70;
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	arrData[0] := 71;
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	arrData[0] := 72;
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	arrData[0] := 73;
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	arrData[0] := 74;
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-	tcpTest.AddTask('Send', 0, ADR(arrData), SIZEOF(arrData));
-END_IF
-tcpTest(
+      <ST><![CDATA[systemtaskinfo();
+
+ulogger1(
 	bEnable:= TRUE, 
-	bReset:= , 
-	sRemoteIp:= '127.0.0.1', 
-	nRemotePort:= 8003, 
-	pRecvData:= ADR(arrRecv), 
-	nRecvSize:= SIZEOF(arrRecv), 
-	bBusyConnect=> , 
-	bConnected=> , 
-	bBusySend=> , 
-	bSendDone=> , 
-	bBusyRecv=> , 
-	bRecvDone=> , 
-	bError=> , 
-	nRecvBytes=> , 
-	bDataReceived=> );]]></ST>
+	nBufferSizeSet:= 10240, 
+	bEnableEventLogger:= , 
+	bEnableFileLogger:= , 
+	sLogFilePath:= 'C:\');
+String1 := DCTIME64_TO_STRING(F_GetActualDcTime64());
+tonWriteLog(IN:= NOT tonWriteLog.Q, PT:= T#300MS, Q=> , ET=> );
+IF tonWriteLog.Q AND bTestUlogger THEN
+	ulogger1.WriteLog(String1);
+	ulogger1.WriteLog(String1);
+	ulogger1.WriteLog(String1);
+END_IF
+systemappinfo();
+fileLogger(
+	Overwrite:= , 
+	SizeOfMemory:= 512, 
+	TimeFillBuffer=> , 
+	Full=> , 
+	Empty=> , 
+	ReadyToRead=> , 
+	pDataToRead=> , 
+	SizeOfDataToRead=> , 
+	hr=> , 
+	OPTION_KEEP_FILE_ON_ERROR=> , 
+	OPTION_START_WITH_NEW_FILE=> , 
+	Enable:= TRUE, 
+	ResetTrig:= , 
+	Options:= , 
+	Path:= , 
+	Filetype:= , 
+	TimeWriteFile=> , 
+	hFile=> , 
+	Busy=> , 
+	Error=> , 
+	ErrorId=> );
+IF testLog THEN
+	testLog := FALSE;
+	fileLogger.addString('TestString TestString TestString TestString TestString$R$N');
+END_IF
+
+Pendulum(TimeSourceDateTime := timesource);
+
+pt1 := Pendulum.Now();
+pt2 := Pendulum.New(2023,5,1,13,24,15,000,0);
+pt3 := Pendulum.New(2021,5,1,13,24,15,000,0);
+//diff1 := pt2.Diff(pt1);
+diffyear := pt2.Diff(pt1).inYears();
+diffyear2 := pt3.Diff(pt1).inYears();
+
+DAYNUM1 :=calcDayNumber(2024,5,3);
+
+]]></ST>
     </Implementation>
     <LineIds Name="MAIN">
-      <LineId Id="142" Count="4" />
-      <LineId Id="141" Count="0" />
-      <LineId Id="147" Count="0" />
-      <LineId Id="5" Count="0" />
-      <LineId Id="139" Count="0" />
-      <LineId Id="109" Count="1" />
-      <LineId Id="25" Count="0" />
-      <LineId Id="37" Count="0" />
-      <LineId Id="30" Count="0" />
-      <LineId Id="81" Count="3" />
-      <LineId Id="59" Count="1" />
-      <LineId Id="77" Count="3" />
-      <LineId Id="50" Count="0" />
-      <LineId Id="66" Count="4" />
-      <LineId Id="65" Count="0" />
-      <LineId Id="72" Count="4" />
-      <LineId Id="71" Count="0" />
-      <LineId Id="86" Count="4" />
-      <LineId Id="85" Count="0" />
-      <LineId Id="92" Count="4" />
-      <LineId Id="91" Count="0" />
-      <LineId Id="98" Count="4" />
-      <LineId Id="97" Count="0" />
-      <LineId Id="104" Count="4" />
-      <LineId Id="103" Count="0" />
-      <LineId Id="27" Count="0" />
-      <LineId Id="122" Count="14" />
+      <LineId Id="384" Count="1" />
+      <LineId Id="342" Count="5" />
+      <LineId Id="354" Count="0" />
+      <LineId Id="356" Count="0" />
+      <LineId Id="348" Count="0" />
+      <LineId Id="350" Count="0" />
+      <LineId Id="358" Count="1" />
+      <LineId Id="351" Count="0" />
+      <LineId Id="276" Count="0" />
+      <LineId Id="294" Count="20" />
+      <LineId Id="163" Count="0" />
+      <LineId Id="315" Count="0" />
+      <LineId Id="318" Count="0" />
+      <LineId Id="320" Count="0" />
+      <LineId Id="319" Count="0" />
+      <LineId Id="316" Count="0" />
+      <LineId Id="190" Count="1" />
+      <LineId Id="164" Count="0" />
+      <LineId Id="228" Count="0" />
+      <LineId Id="236" Count="0" />
+      <LineId Id="225" Count="0" />
+      <LineId Id="232" Count="0" />
+      <LineId Id="231" Count="0" />
+      <LineId Id="239" Count="0" />
+      <LineId Id="238" Count="0" />
       <LineId Id="121" Count="0" />
+      <LineId Id="258" Count="0" />
     </LineIds>
   </POU>
 </TcPlcObject>

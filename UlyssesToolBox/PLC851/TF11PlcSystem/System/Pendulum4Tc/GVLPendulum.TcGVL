@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="GVLPendulum" Id="{cabe1232-263f-4474-a80c-149b745e081a}">
+    <Declaration><![CDATA[//{attribute 'qualified_only'}
+VAR_GLOBAL
+	Pendulum : Pendulum4Tc;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

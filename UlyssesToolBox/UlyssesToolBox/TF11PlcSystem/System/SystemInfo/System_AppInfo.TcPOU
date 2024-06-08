@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="System_AppInfo" Id="{491351fa-4d3c-4965-b6bb-0193aecad8da}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK System_AppInfo
+VAR_INPUT
+	
+END_VAR
+VAR_OUTPUT
+	ObjectID: UDINT;
+	TaskCount: UDINT;
+	OnlineChangeCount: UDINT;
+	Flags: DWORD;
+	AdsPort: UINT;
+	BootDataLoaded: BOOL;
+	OldBootData: BOOL;
+	AppTimestamp: DATE_AND_TIME;
+	KeepOutputsOnBreakpoint: BOOL;
+	ShutdownInProgress: BOOL;
+	LicensePending: BOOL;
+	BlueScreenOccured: BOOL;
+	LoggedIn: BOOL;
+	PersistentStatus: EPlcPersistentStatus;
+	TcComSrvPointer: ITComObjectServer;
+	AppName: STRING(63);
+	ProjectName: STRING(63);
+END_VAR
+VAR
+	(* AppInfo Source Data *)
+	_ThisAppInfo: PlcAppSystemInfo;
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[_ThisAppInfo := TwinCAT_SystemInfoVarList._AppInfo;
+ObjectID := _ThisAppInfo.ObjId;
+TaskCount := _ThisAppInfo.TaskCnt;
+OnlineChangeCount := _ThisAppInfo.OnlineChangeCnt;
+Flags := _ThisAppInfo.Flags;
+AdsPort := _ThisAppInfo.AdsPort;
+BootDataLoaded := _ThisAppInfo.BootDataLoaded;
+OldBootData := _ThisAppInfo.OldBootData;
+AppTimestamp := _ThisAppInfo.AppTimestamp;
+KeepOutputsOnBreakpoint := _ThisAppInfo.KeepOutputsOnBP;
+ShutdownInProgress := _ThisAppInfo.ShutdownInProgress;
+LicensePending := _ThisAppInfo.LicensesPending;
+BlueScreenOccured := _ThisAppInfo.BSODOccured;
+LoggedIn := _ThisAppInfo.LoggedIn;
+PersistentStatus := _ThisAppInfo.PersistentStatus;
+TcComSrvPointer := _ThisAppInfo.TComSrvPtr;
+AppName := _ThisAppInfo.AppName;
+ProjectName := _ThisAppInfo.ProjectName;
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="System_AppInfo">
+      <LineId Id="9" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="55" Count="0" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="59" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="63" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="11" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

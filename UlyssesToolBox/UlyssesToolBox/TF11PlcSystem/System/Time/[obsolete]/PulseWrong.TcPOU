@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="PulseWrong" Id="{35c9821f-ed4c-4580-b344-169683c3d473}" SpecialFunc="None">
+    <Declaration><![CDATA[{attribute 'no_check'}
+(* 脉冲生成器 Pulse Generator *)
+FUNCTION_BLOCK PulseWrong
+VAR_INPUT
+	Enable : BOOL; (* BOOL, 启用脉冲生成器 *)
+	Time_On : TIME; (* TIME, On脉冲时间 *)
+	Time_Off : TIME; (* TIME, Off脉冲时间 *)
+END_VAR
+VAR_OUTPUT
+	Q : BOOL; (* BOOL, 脉冲输出 *)
+	RT : BOOL; (* BOOL, 脉冲输出上升沿 *)
+	FT : BOOL; (* BOOL, 脉冲输出下降沿 *)
+END_VAR
+VAR
+	tonPluse :TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* 
+Title		: 脉冲生成器 Pulse Generator
+Time		: 2023-11-03
+Creator		: Ulysses
+Reference	: IOTA_Program
+Commecnts	: 这个程序生成的脉冲会受到扫描周期的影响，每次脉冲都会偏移两个扫描周期
+*)
+(* 复位输出 *)
+RT := FT := FALSE;
+(* 内部逻辑 *)
+IF Q AND (tonPluse.Q OR NOT Enable) THEN
+	tonPluse(IN:= FALSE, PT:= Time_Off, Q=> , ET=> );
+	FT := Q;
+	Q := FALSE;
+ELSIF NOT Q AND tonPluse.Q OR_ELSE Enable AND NOT tonPluse.IN THEN
+	RT := NOT Q;
+	tonPluse(IN:= FALSE, PT:= Time_On, Q=> , ET=> );
+	Q := TRUE;
+END_IF
+
+tonPluse(IN:= Enable, PT:= , Q=> , ET=> );
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="PulseWrong">
+      <LineId Id="9" Count="0" />
+      <LineId Id="19" Count="2" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="68" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="39" Count="1" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="44" Count="5" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="25" Count="9" />
+      <LineId Id="23" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

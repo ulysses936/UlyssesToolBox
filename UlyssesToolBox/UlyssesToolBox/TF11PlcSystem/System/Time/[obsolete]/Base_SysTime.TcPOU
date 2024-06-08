@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="Base_SysTime" Id="{ab0d832b-3c51-4f20-a093-41dc8e6545d9}" SpecialFunc="None">
+    <Declaration><![CDATA[(* 这个程序是一开始的时间获取程序，提供了两种时间源，将时间转换逻辑做在了内部。之后新写了一个功能块Base_SysInfo，将时间转换逻辑分开 *)
+FUNCTION_BLOCK Base_SysTime
+VAR_INPUT
+	TimeSource : INT:=0; (* 0:systemInfo 1:FB_LocalSystemTime *)
+END_VAR
+VAR_OUTPUT
+	oUnixTimeStamp10 : ULINT; (* 10位unix时间戳，代表从格林威治时间1970-01-01 00:00:00开始的秒数 *)
+	oUnixTimeStamp13 : ULINT; (* 13位unix时间戳，代表从格林威治时间1970-01-01 00:00:00开始的秒数+3位毫秒数 *)
+	oFileTime64 : T_FILETIME64; (* Utilities库中引入的Windows文件系统时间戳，代表从格林威治时间1601-01-01 00:00:00开始的纳秒数 *)
+	oDateAndTime : DATE_AND_TIME; (* TwinCAT系统自带的本地时间日期格式，数值为10位unix时间戳，受到时区影响 *)
+	oSystemTime : TIMESTRUCT; (* Utilities库中定义的本地时间日期格式，包含了年月日时分秒毫秒的结构体，受到时区影响 *)
+	oTimeString : STRING;
+	
+END_VAR
+VAR
+	TimeZone : ULINT := 8;
+	//TimeSource1
+	SystemInfo : PlcAppSystemInfo;
+	TaskInfo : PlcTaskSystemInfo;
+	UnixTimeStamp10 : ULINT;
+	UnixTimeStamp13 : ULINT;
+	inFileTime64 : T_FILETIME64;
+	
+	
+	//TimeSource2
+	fbLocalSystemTime : FB_LocalSystemTime:=(sNetID:='', bEnable:=TRUE);
+	localSystemTime :TIMESTRUCT;
+	_fileTime64:T_FILETIME64;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[CASE TimeSource OF
+	0:(* TimeSource1 *)
+	SystemInfo := _AppInfo;
+	TaskInfo := _TaskInfo[GETCURTASKINDEXEX()];
+	(* 946684800:从1970-2000年的秒数  11644473600:从1601-1970的秒数  5:误差补偿 *)
+	(* DcTaskTime从2000-01-01 00:00:00:000开始，精确到1ns，10位Unix时间戳从1970-01-01 00:00:00开始，精确到1s *)
+	UnixTimeStamp10 := 946684800 + LINT_TO_ULINT(TaskInfo.DcTaskTime)/1000000000;
+	(* DcTaskTime从2000-01-01 00:00:00:000开始，精确到1ns，13位Unix时间戳从1970-01-01 00:00:00开始，精确到1ms *)
+	UnixTimeStamp13 := 946684800_000 + LINT_TO_ULINT(TaskInfo.DcTaskTime)/1000000;
+	(* FileTime64从1601-01-01 00:00:00开始，精确到100ns, *)
+	inFileTime64 := LINT_TO_ULINT(TaskInfo.DcTaskTime)/100 + 946684800_0000000 + 11644473600_0000000 - 5_0000000;
+	(* Output *)
+	oUnixTimeStamp10 := UnixTimeStamp10;
+	oUnixTimeStamp13 := UnixTimeStamp13;
+	(* 将时间戳转换为自带的DATE_AND_TIME，要注意转换过来的是格林威治时间，需要加上8小时转换为北京时间 *)
+	oDateAndTime:= ULINT_TO_DT(UnixTimeStamp10 + TimeZone * 3600 - 5);
+	oFileTime64 := inFileTime64;
+	(* 将时间戳转换为SYSTEM，要注意转换过来的是格林威治时间，需要加上8小时转换为北京时间 *)
+	oSystemTime := FILETIME64_TO_SYSTEMTIME(inFileTime64 + TimeZone * 3600_0000000);
+
+	1:
+	//TimeSource2
+	fbLocalSystemTime(bValid=> , systemTime=> localSystemTime, tzID=> );
+	_fileTime64 := SYSTEMTIME_TO_FILETIME64(localSystemTime) - TimeZone * 36000000000;
+	(* Output *)
+	oSystemTime := localSystemTime;
+	(* 因为Source2的时间源受到时区影响，所以都要减去时区 *)
+	oFileTime64 := _fileTime64 ;
+	oUnixTimeStamp13 := _fileTime64/10000 - 11644473600000  + 5000;
+	oUnixTimeStamp10 := _fileTime64/10000000 - 11644473600  + 5;
+	oDateAndTime := FILETIME64_TO_DT(_fileTime64 + TimeZone * 3600_0000000);
+	
+END_CASE
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="Base_SysTime">
+      <LineId Id="184" Count="1" />
+      <LineId Id="193" Count="1" />
+      <LineId Id="223" Count="0" />
+      <LineId Id="195" Count="1" />
+      <LineId Id="221" Count="0" />
+      <LineId Id="197" Count="0" />
+      <LineId Id="222" Count="0" />
+      <LineId Id="198" Count="0" />
+      <LineId Id="201" Count="0" />
+      <LineId Id="203" Count="1" />
+      <LineId Id="218" Count="0" />
+      <LineId Id="187" Count="1" />
+      <LineId Id="224" Count="0" />
+      <LineId Id="216" Count="1" />
+      <LineId Id="189" Count="0" />
+      <LineId Id="200" Count="0" />
+      <LineId Id="190" Count="0" />
+      <LineId Id="211" Count="0" />
+      <LineId Id="191" Count="0" />
+      <LineId Id="208" Count="0" />
+      <LineId Id="226" Count="0" />
+      <LineId Id="212" Count="0" />
+      <LineId Id="209" Count="0" />
+      <LineId Id="206" Count="1" />
+      <LineId Id="215" Count="0" />
+      <LineId Id="186" Count="0" />
+      <LineId Id="167" Count="0" />
+      <LineId Id="176" Count="0" />
+      <LineId Id="175" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

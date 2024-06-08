@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_TimeConvertor" Id="{3be3cbb3-02bb-4d09-880d-b705c3659ead}">
+    <Declaration><![CDATA[TYPE ST_TimeConvertor :
+STRUCT
+		(* #########################  System  ######################### *)
+		
+	(* Alias: -- *)
+	(* Size: 32-bit *)
+	(* Range: 0=>1970-01-01 2^32-1=>2106-02-07 *)
+	(* Resolution: 1s, only the day is displayed *)
+	(* https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_plc_intro/2529415819.html&id=7132877304198979715 *)
+	(* Native *)
+	Date_D : DATE;
+	
+	(* Alias: -- *)
+	(* Size: 32-bit *)
+	(* Range: 0=>00:00:00.000 86399999=>23:59:59.999 *)
+	(* Resolution: 1ms *)
+	(* https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_plc_intro/2529415819.html&id=7132877304198979715 *)
+	(* Native *)
+	TimeOfDay_TOD : TIME_OF_DAY;
+	
+	(* Alias: -- *)
+	(* Size: 32-bit *)
+	(* Range: 0=>1970-01-01 00:00:00 2^32-1=>2106-02-07 06:28:15 *)
+	(* Resolution: 1s *)
+	(* https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_plc_intro/2529415819.html&id=7132877304198979715 *)
+	(* Native *)
+	DateAndTime_DT : DATE_AND_TIME;
+	
+	(* Alias: -- *)
+	(* Size: 64-bit *)
+	(* Range: 0=>1970-01-01 2^64-1=>2554-07-21 *)
+	(* Resolution: 1ns *)
+	(* https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_plc_intro/2529415819.html&id=7132877304198979715 *)
+	(* Only For >=4026.0 *)
+	//LDate_LDT : LDATE;
+	
+	(* Alias: -- *)
+	(* Size: 64-bit *)
+	(* Range: 0=>00:00:00.000000000 2^64-1=>23:59:59.999999999 *)
+	(* Resolution: 1ns *)
+	(* https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_plc_intro/2529415819.html&id=7132877304198979715 *)
+	(* Only For >=4026.0 *)
+	//LTimeOfDay_LTOD : LTIME_OF_DAY;
+	
+	(* Alias: -- *)
+	(* Size: 64-bit *)
+	(* Range: 0=>1970-01-01 00:00:00.000000000 2^64-1=>2554-07-21 23:34:33.709551615 *)
+	(* Resolution: 1ns *)
+	(* https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_plc_intro/2529415819.html&id=7132877304198979715 *)
+	(* Only For >=4026.0 *)
+	//LDateAndTime_LDT : LDATE_AND_TIME;
+	
+		(* #########################  Tc2_Utilities  ######################### *)
+	
+	(* Alias: T_ULARGE_INTEGER -> Struct of 2 DWORD *)
+	(* Size: 64-bit *)
+	(* Range: -- *)
+	(* Resolution: 100ns *)
+	(* obsolete! *)
+	FileTime : T_FILETIME;
+	
+	(* Alias: ULINT *)
+	(* Size: 64-bit *)
+	(* Range: 0=>1601-01-01 00:00:00.0000000 2^64-1=>2185-11-09 23:34:33.9999999 *)
+	(* Resolution: 100ns *)
+	(* https://infosys.beckhoff.com/english.php?content=../content/1033/tcplclib_tc2_utilities/10462547339.html&id= *)
+	(* Recommend! *)
+	FileTime64 : T_FILETIME64;
+	
+	(* Alias: Struct of 8 WORD *)
+	(* Size: 128-bit *)
+	(* Range: 1970-01-01 Sunday 00:00:00.000  2106-12-31 Saturday 23:59:59.999 *)
+	(* Resolution: 1ms *)
+	(* https://infosys.beckhoff.com/english.php?content=../content/1033/tcplclib_tc2_utilities/35393035.html&id=8702657298802174446 *)
+	(* Recommend! *)
+	TimeStruct : TIMESTRUCT;
+	
+	(* Alias: Struct of 6 WORD *)
+	(* Size: 96-bit *)
+	(* Range: Week0 Day0 00:00:00.000  Week65535 Day7 23:59:59.999 *)
+	(* Resolution: 1ms *)
+	(* https://infosys.beckhoff.com/english.php?content=../content/1033/tcplclib_tc2_utilities/35353099.html&id=8265378500365774535 *)
+	(* What's this??  weeks + days *)
+	(* NOT Recommend! *)
+	OtStruct : OTSTRUCT;
+	
+		(* #########################  Tc2_EtherCAT  ######################### *)
+		
+	(* Alias: T_ULARGE_INTEGER -> Struct of 2 DWORD *)
+	(* Size: 64-bit *)
+	(* Range: -- *)
+	(* Resolution: 1ns *)
+	(* obsolete! *)
+	DcTime : T_DCTIME;
+	
+	(* Alias: UDINT *)
+	(* Size: 32-bit *)
+	(* Range: +-2147s *)
+	(* Resolution: 1ns *)
+	(* NOT Recommend! *)
+	DcTime32 : T_DCTIME32; 
+	
+	(* Alias: ULINT *)
+	(* Size: 64-bit *)
+	(* Range: 0=>2000-01-01 00:00:00.000000000 2^64-1=>2584-11-09 23:34:33.999999999 *)
+	(* Resolution: 1ns *)
+	(* Recommend! *)
+	DcTime64 : T_DCTIME64;
+
+		(* #########################  Custom & Others  ######################### *)
+	
+	Unix : UDINT;
+	UnixEx : ULINT;
+	//Unix64
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

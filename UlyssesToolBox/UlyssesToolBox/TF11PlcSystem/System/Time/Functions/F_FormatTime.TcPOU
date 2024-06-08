@@ -1,0 +1,134 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_FormatTime" Id="{081b4736-479f-4f4f-bcb0-d05c3571237f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_FormatTime : STRING
+VAR_INPUT
+	TimeFormat : STRING;
+	TimeInput : TIMESTRUCT;
+END_VAR
+VAR
+	POS_YYYY : INT;
+	POS_MM : INT;
+	POS_DD : INT;
+	POS_hh : INT;
+	POS_Lmm : INT;
+	POS_ss : INT;
+	POS_xxx : INT;
+	YYYY : STRING(4);
+	MM : STRING(2);
+	DD : STRING(2);
+	hh : STRING(2);
+	Lmm : STRING(2);
+	ss : STRING(2);
+	xxx : STRING(3);
+	TEMPSTRING : STRING;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[POS_YYYY := FIND(STR1:= TimeFormat, STR2:= 'YYYY');
+POS_MM := FIND(STR1:= TimeFormat, STR2:= 'MM');
+POS_DD := FIND(STR1:= TimeFormat, STR2:= 'DD');
+POS_hh := FIND(STR1:= TimeFormat, STR2:= 'hh');
+POS_Lmm := FIND(STR1:= TimeFormat, STR2:= 'mm');
+POS_ss := FIND(STR1:= TimeFormat, STR2:= 'ss');
+POS_xxx := FIND(STR1:= TimeFormat, STR2:= 'xxx');
+
+YYYY := TO_STRING(TimeInput.wYear);
+MM := TO_STRING(TimeInput.wMonth);
+DD := TO_STRING(TimeInput.wDay);
+hh := TO_STRING(TimeInput.wHour);
+Lmm := TO_STRING(TimeInput.wMinute);
+ss := TO_STRING(TimeInput.wSecond);
+xxx := TO_STRING(TimeInput.wMilliseconds);
+WHILE LEN(YYYY) < 4 DO
+	YYYY := CONCAT(STR1:= '0', STR2:= YYYY);
+END_WHILE;
+WHILE LEN(MM) < 2 DO
+	MM := CONCAT(STR1:= '0', STR2:= MM);
+END_WHILE;
+WHILE LEN(DD) < 2 DO
+	DD := CONCAT(STR1:= '0', STR2:= DD);
+END_WHILE;
+WHILE LEN(hh) < 2 DO
+	hh := CONCAT(STR1:= '0', STR2:= hh);
+END_WHILE;
+WHILE LEN(Lmm) < 2 DO
+	Lmm := CONCAT(STR1:= '0', STR2:= Lmm);
+END_WHILE;
+WHILE LEN(ss) < 2 DO
+	ss := CONCAT(STR1:= '0', STR2:= ss);
+END_WHILE;
+WHILE LEN(xxx) < 3 DO
+	xxx := CONCAT(STR1:= '0', STR2:= xxx);
+END_WHILE;
+
+TEMPSTRING := TimeFormat;
+
+IF POS_YYYY <> 0 THEN
+	TEMPSTRING := REPLACE(STR1:= TEMPSTRING, STR2:= YYYY, L:= 4, P:= POS_YYYY);
+END_IF
+IF POS_MM <> 0 THEN
+	TEMPSTRING := REPLACE(STR1:= TEMPSTRING, STR2:= MM, L:= 2, P:= POS_MM);
+END_IF
+IF POS_DD <> 0 THEN
+	TEMPSTRING := REPLACE(STR1:= TEMPSTRING, STR2:= DD, L:= 2, P:= POS_DD);
+END_IF
+IF POS_hh <> 0 THEN
+	TEMPSTRING := REPLACE(STR1:= TEMPSTRING, STR2:= hh, L:= 2, P:= POS_hh);
+END_IF
+IF POS_Lmm <> 0 THEN
+	TEMPSTRING := REPLACE(STR1:= TEMPSTRING, STR2:= Lmm, L:= 2, P:= POS_Lmm);
+END_IF
+IF POS_ss <> 0 THEN
+	TEMPSTRING := REPLACE(STR1:= TEMPSTRING, STR2:= ss, L:= 2, P:= POS_ss);
+END_IF
+IF POS_xxx <> 0 THEN
+	TEMPSTRING := REPLACE(STR1:= TEMPSTRING, STR2:= xxx, L:= 3, P:= POS_xxx);
+END_IF
+F_FormatTime := TEMPSTRING;
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="F_FormatTime">
+      <LineId Id="11" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="29" Count="3" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="67" Count="6" />
+      <LineId Id="76" Count="2" />
+      <LineId Id="81" Count="1" />
+      <LineId Id="80" Count="0" />
+      <LineId Id="85" Count="1" />
+      <LineId Id="84" Count="0" />
+      <LineId Id="88" Count="1" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="93" Count="1" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="95" Count="1" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="98" Count="1" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="101" Count="0" />
+      <LineId Id="100" Count="0" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="33" Count="1" />
+      <LineId Id="36" Count="1" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="49" Count="1" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="52" Count="1" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="55" Count="1" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="58" Count="1" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="43" Count="1" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

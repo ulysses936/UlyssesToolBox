@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_SimpleAxisState" Id="{91a75650-6de7-4697-8278-34d5db6a12d8}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_SimpleAxisState :
+(
+	Waiting := 0,
+	BeforeJog := 10,
+	Joging :=11,
+	JogDone := 18,
+	
+	BeforeMovePos :=20,
+	MovingAbs := 21,
+	MovingMod :=23,
+	MovingRel := 24,
+	MovePosDone := 28,
+	
+	BeforeMoveVelo := 30,
+	MovingVelo := 31,
+	MoveVeloStop := 32,
+	MoveVeloDone := 38,
+	
+	
+	BeforeHoming := 50,
+	Homing :=51,
+	FinishHoming := 52,
+	HomeToZero := 53,
+	HomeDone :=58,
+
+	Aborted := 90,
+	Error :=99
+
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

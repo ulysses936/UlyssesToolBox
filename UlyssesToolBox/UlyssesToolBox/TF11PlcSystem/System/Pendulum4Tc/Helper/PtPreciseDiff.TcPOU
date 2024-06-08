@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="PtPreciseDiff" Id="{712dc1f4-25ad-4265-8045-422cc0d0a301}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK PtPreciseDiff
+VAR_INPUT
+	years: DINT;
+    months: DINT;
+    days: DINT;
+    hours: DINT;
+    minutes: DINT;
+    seconds: DINT;
+    microseconds: DINT;
+    total_days: DINT;
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="Set" Id="{7fa07a64-4ba5-4fbf-9d05-7af5a915a08d}">
+      <Declaration><![CDATA[METHOD Set : BOOL
+VAR_INPUT
+	years: DINT;
+    months: DINT;
+    days: DINT;
+    hours: DINT;
+    minutes: DINT;
+    seconds: DINT;
+    microseconds: DINT;
+    total_days: DINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.years := years;
+THIS^.months := months;
+THIS^.days := days;
+THIS^.hours := hours;
+THIS^.minutes := minutes;
+THIS^.seconds := seconds;
+THIS^.microseconds := microseconds;
+THIS^.total_days := total_days;
+
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="PtPreciseDiff">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="PtPreciseDiff.Set">
+      <LineId Id="5" Count="0" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="19" Count="5" />
+      <LineId Id="16" Count="2" />
+      <LineId Id="14" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

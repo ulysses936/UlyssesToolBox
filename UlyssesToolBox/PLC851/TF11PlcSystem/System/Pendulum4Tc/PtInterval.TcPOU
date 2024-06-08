@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="PtInterval" Id="{81e6146b-efef-4ffa-9681-6b446ef612b5}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK PtInterval IMPLEMENTS I_PtInterval
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	_Start : PtDateTime;
+	_End : PtDateTime;
+	_Absolute : BOOL;
+	
+	_DeltaYears : DINT;
+	_DeltaMonths : DINT;
+	_DeltaDays : DINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Property Name="Absolute" Id="{850a2711-42a4-4649-beeb-ad46908d4db0}">
+      <Declaration><![CDATA[PROPERTY Absolute : BOOL]]></Declaration>
+      <Get Name="Get" Id="{84ffecba-217a-467b-ba14-629eaf1ac184}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Absolute := _Absolute;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{8fb06fe2-f8c9-4026-b802-0d19fabefb26}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_Absolute := Absolute;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="End" Id="{49b7ccff-456b-497f-a7b9-d266cbdbd9ff}">
+      <Declaration><![CDATA[PROPERTY End : PtDateTime]]></Declaration>
+      <Get Name="Get" Id="{c51f9c78-b544-41ec-9f9d-93c674039eae}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[End := _End;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{8fb38c71-0620-4cad-8753-041ac8d238bf}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_End := End;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="inMonth" Id="{9d54fa83-e390-4b1d-8489-8dd5ccaf61df}">
+      <Declaration><![CDATA[METHOD inMonth : DINT
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[inMonth := ABS(_Start.Month - _End.Month);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="inYears" Id="{929b505f-fdb0-4a02-b5bd-122a78ebd708}">
+      <Declaration><![CDATA[METHOD inYears : DINT
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[inYears := ABS(_Start.Year - _End.Year);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Set" Id="{ad7ecb83-8faa-4b59-b16c-52d8de52e79d}">
+      <Declaration><![CDATA[METHOD Set //: BOOL
+VAR_INPUT
+	Start : PtDateTime;
+	End : PtDateTime;
+	Absolute : BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_Start := Start;
+_End := End;
+_Absolute := Absolute;
+
+_DeltaYears := ABS(_Start.Year - _End.Year);
+_DeltaMonths := ABS(_Start.Month - _End.Month);
+_DeltaDays := ABS(_Start.Day - End.Day);]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Start" Id="{dcdc2291-7714-4af6-b419-dadfb6c86870}">
+      <Declaration><![CDATA[PROPERTY Start : PtDateTime]]></Declaration>
+      <Get Name="Get" Id="{cda418ee-7804-4d2c-9d18-68fad9af9a9d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{32da7c98-855d-41f4-87a4-60baa0d6b62c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_Start := Start;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <LineIds Name="PtInterval">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="PtInterval.Absolute.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtInterval.Absolute.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtInterval.End.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtInterval.End.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtInterval.inMonth">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="PtInterval.inYears">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="PtInterval.Set">
+      <LineId Id="5" Count="0" />
+      <LineId Id="9" Count="1" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="13" Count="1" />
+    </LineIds>
+    <LineIds Name="PtInterval.Start.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtInterval.Start.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_ITF2" Id="{8d351b78-78cf-4a79-90ee-568fd2c1d25a}">
+    <Declaration><![CDATA[INTERFACE I_ITF2
+]]></Declaration>
+    <Method Name="ANDOP" Id="{3920511a-7113-4d09-a177-5047321168c9}">
+      <Declaration><![CDATA[METHOD ANDOP : I_ITF1
+VAR_INPUT
+END_VAR
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

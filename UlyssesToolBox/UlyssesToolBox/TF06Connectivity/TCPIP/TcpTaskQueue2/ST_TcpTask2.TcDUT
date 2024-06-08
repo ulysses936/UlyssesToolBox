@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_TcpTask2" Id="{ce009a77-bfef-436e-8aee-b9c1e9b2b7f6}">
+    <Declaration><![CDATA[{attribute 'pack_mode' := '1'}
+TYPE ST_TcpTask2 :
+STRUCT
+	TaskName : STRING(24);
+	TaskType : INT; (* 0:Once, 1:Regular *)
+	pData : PVOID;
+	nData : UDINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,124 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="Output" Id="{d76b845e-54f8-49e2-9841-6a97f3b46fac}" SpecialFunc="None">
+    <Declaration><![CDATA[{attribute 'no_check'}
+(* 
+输出功能块 Output
+输出功能块
+*)
+FUNCTION_BLOCK Output
+VAR_INPUT
+	Enable : BOOL := TRUE; (* False: 不启用, True: 启用 *)
+END_VAR
+VAR_OUTPUT
+	Out AT%Q* : BOOL; (* 绑定到输出变量，或者利用功能块引脚直接输出 *)
+END_VAR
+VAR
+	InternCycleCounter : UDINT; (* 执行时内置的循环数 *)
+	ThisCycleExecuteCounter : UDINT; (* 当前周期循环数 *)
+	LastCycleExecuteCounter : UDINT; (* 上个周期循环数 *)
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+TIME		: 2023-11-13 15:46
+Version		: 1.0
+Creator		: Ulysses
+Reference	: IOTA - BLUE
+Commecnts	: 输出功能块，Set返回值代表当前周期调用次数，LastCounter代表上个周期调用次数。
+*)
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <Property Name="LastCounter" Id="{229f3a45-450c-4971-bd5c-a525a29ba59a}">
+      <Declaration><![CDATA[(* 上周期调用次数 *)
+PROPERTY LastCounter : UDINT]]></Declaration>
+      <Get Name="Get" Id="{87de1529-89e6-40cd-9ec0-7881a2c0d791}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[LastCounter := LastCycleExecuteCounter;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="SetOff" Id="{e950dcec-716d-4f65-8371-ddf7457817f8}">
+      <Declaration><![CDATA[(* 返回值代表当前周期内SetOn或者SetOff被执行的次数，正常为1，如果大于1则可能出现双线圈问题 *)
+METHOD SetOff : UDINT
+VAR_INPUT
+END_VAR
+VAR
+	TempCycleCounter : UDINT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Out := Enable AND FALSE;
+TempCycleCounter := _TaskInfo[GETCURTASKINDEXEX()].CycleCount;
+IF InternCycleCounter <> TempCycleCounter THEN
+	InternCycleCounter := TempCycleCounter;
+	LastCycleExecuteCounter := ThisCycleExecuteCounter;
+	ThisCycleExecuteCounter := 0 ;
+END_IF
+ThisCycleExecuteCounter := ThisCycleExecuteCounter + 1;
+
+SetOff := ThisCycleExecuteCounter;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetOn" Id="{a23cce4e-3590-4d28-a5b1-3f65c02f476c}">
+      <Declaration><![CDATA[(* 返回值代表当前周期内SetOn或者SetOff被执行的次数，正常为1，如果大于1则可能出现双线圈问题 *)
+METHOD SetOn : UDINT
+VAR_INPUT
+END_VAR
+VAR
+	TempCycleCounter : UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Out := Enable AND TRUE;
+TempCycleCounter := _TaskInfo[GETCURTASKINDEXEX()].CycleCount;
+IF InternCycleCounter <> TempCycleCounter THEN
+	InternCycleCounter := TempCycleCounter;
+	LastCycleExecuteCounter := ThisCycleExecuteCounter;
+	ThisCycleExecuteCounter := 0 ;
+END_IF
+ThisCycleExecuteCounter := ThisCycleExecuteCounter + 1;
+
+SetOn := ThisCycleExecuteCounter;
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="Output">
+      <LineId Id="11" Count="5" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="24" Count="4" />
+      <LineId Id="23" Count="0" />
+    </LineIds>
+    <LineIds Name="Output.LastCounter.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="Output.SetOff">
+      <LineId Id="6" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="23" Count="1" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="25" Count="1" />
+      <LineId Id="20" Count="1" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="Output.SetOn">
+      <LineId Id="5" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="16" Count="1" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="8" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

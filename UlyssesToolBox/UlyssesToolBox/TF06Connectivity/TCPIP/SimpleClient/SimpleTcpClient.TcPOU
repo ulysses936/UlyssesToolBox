@@ -1,0 +1,764 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="SimpleTcpClient" Id="{1d38ab84-067b-4190-95a4-39a262521453}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK SimpleTcpClient
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	fbSocketConnect : FB_ClientServerConnection;
+	fbSocketSend : FB_SocketSend;
+	fbSocketReceive : FB_SocketReceive;
+	fbGetLinkStatus: FB_SocketGetLinkStatus;
+	tonLinkStatus : TON;
+	(* Properties *)
+	_SktPara : stSktPara;
+	_Connected : BOOL;
+	_hSocket : T_HSOCKET;
+	_LastRecvBytes : UDINT;
+	_Error : BOOL;
+	_ErrorID : UDINT;
+	_SentCounter : UDINT;
+	_SentBytes : UDINT;
+	_RecvdCounter : UDINT;
+	_RecvdBytes : UDINT;
+	(* Connect *)
+
+	StepReconnect : UDINT;
+	(* GetLinkStatus *)
+	LastStatus : BOOL;
+	(* SendReceive *)
+	StepSendReceive : UDINT;
+	RecvTimes : UDINT;
+	(* SendRecv *)
+	StepSendRecv : UDINT;
+	TryRecvTimes : UDINT;
+	TonTryRecvTimeout : TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="ClearDiagData" Id="{e9f5ffae-65cc-42d5-b241-cf2672a9825c}">
+      <Declaration><![CDATA[METHOD ClearDiagData : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_SentCounter :=0 ;
+_SentBytes :=0  ;
+_RecvdCounter :=0 ;
+_RecvdBytes :=0 ;
+ClearDiagData := TRUE;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Connect" Id="{9caaddd4-6266-4706-b534-bb3e974564fb}">
+      <Declaration><![CDATA[METHOD Connect : stConnState
+VAR_INPUT
+	sRemoteHost : T_IPv4Addr;
+	nRemotePort : UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+fbSocketConnect.sRemoteHost := sRemoteHost;
+fbSocketConnect.nRemotePort := nRemotePort;
+fbSocketConnect.bEnable := TRUE;
+fbSocketConnect(sSrvNetID:= '', nMode:= 16#8000_0000, sRemoteHost:= , nRemotePort:= , bEnable:= , tReconnect:= T#45S, 
+	bBusy=> , bError=> , nErrId=> , hSocket=> , eState=> );
+
+CASE StepReconnect OF
+	0:
+		IF _SktPara.AutoReconnect = TRUE AND _Connected = TRUE AND  GetLinkStatus() = FALSE THEN
+			Reconnect();
+			StepReconnect := 10 ;
+		END_IF
+	10:
+		IF  GetLinkStatus() = TRUE THEN
+			StepReconnect := 0 ;
+		END_IF
+END_CASE
+
+(* 返回值 *)
+Connect.eState := fbSocketConnect.eState;
+Connect.bConnected := (fbSocketConnect.eState = eSOCKET_CONNECTED);
+Connect.bError := fbSocketConnect.bError;
+Connect.nErrId := fbSocketConnect.nErrId;
+Connect.hSocket := fbSocketConnect.hSocket;
+(* 内部变量 *)
+_Connected := (fbSocketConnect.eState = eSOCKET_CONNECTED);
+_hSocket := fbSocketConnect.hSocket;
+_Error := fbSocketConnect.bError;
+_ErrorID := fbSocketConnect.nErrId;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Connected" Id="{87c674b3-4bb0-4a88-87c3-c6623364373a}">
+      <Declaration><![CDATA[PROPERTY PUBLIC Connected : bool]]></Declaration>
+      <Get Name="Get" Id="{f58b9455-2286-4cac-8527-a540ed47b73d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Connected := _Connected;
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="Disconnect" Id="{1757a3c8-8730-4a9f-97ac-794352ac2c56}">
+      <Declaration><![CDATA[METHOD Disconnect : stConnState
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[fbSocketConnect.bEnable := FALSE;
+fbSocketConnect(sSrvNetID:= '', nMode:= 16#8000_0000, sRemoteHost:= , nRemotePort:= , bEnable:= , tReconnect:= T#45S, 
+	bBusy=> , bError=> , nErrId=> , hSocket=> , eState=> );
+
+
+(* 返回值 *)
+Disconnect.eState := fbSocketConnect.eState;
+Disconnect.bConnected := (fbSocketConnect.eState <> eSOCKET_DISCONNECTED);
+Disconnect.bError := fbSocketConnect.bError;
+Disconnect.nErrId := fbSocketConnect.nErrId;
+Disconnect.hSocket := fbSocketConnect.hSocket;
+
+(* 内部变量 *)
+_Connected := (fbSocketConnect.eState <> eSOCKET_DISCONNECTED);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Error" Id="{3b8663eb-ed6c-407d-a9d9-11797b7a70aa}">
+      <Declaration><![CDATA[PROPERTY Error : bool]]></Declaration>
+      <Get Name="Get" Id="{338ce258-e114-472b-8d6e-4b06f94f3dc0}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Error := _Error;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorID" Id="{d496e29d-b41e-433a-91fd-0510b0f189cd}">
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT]]></Declaration>
+      <Get Name="Get" Id="{93d81b42-de64-494f-a595-e43119357ba7}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorID := _ErrorID;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="GetLinkStatus" Id="{f8d92248-405f-4019-8f55-e4e4d129f8f0}">
+      <Declaration><![CDATA[METHOD GetLinkStatus : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[tonLinkStatus(IN:= NOT tonLinkStatus.Q, PT:= T#500MS, Q=> , ET=> );
+fbGetLinkStatus.hSocket := _hSocket;
+fbGetLinkStatus.bExecute := tonLinkStatus.Q;
+fbGetLinkStatus(sSrvNetId:= , hSocket:= , bExecute:= , tTimeout:= , 
+	bBusy=> , bError=> , nErrId=> , bLinkError=> );
+//GetLinkStatus := NOT fbGetLinkStatus.bBusy AND NOT fbGetLinkStatus.bError AND NOT fbGetLinkStatus.bLinkError;
+IF fbGetLinkStatus.bBusy THEN
+	GetLinkStatus := LastStatus;
+ELSE
+	LastStatus := GetLinkStatus := NOT fbGetLinkStatus.bError AND NOT fbGetLinkStatus.bLinkError;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="hSocket" Id="{fc5b5b41-a75c-4321-9830-cb4e7595eef8}">
+      <Declaration><![CDATA[PROPERTY hSocket : T_HSOCKET]]></Declaration>
+      <Get Name="Get" Id="{d111dba3-892d-4888-9503-80b671069ae3}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[hSocket := _hSocket;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="LastRecvBytes" Id="{79844233-4c34-4ee4-b2d9-5871385e2d57}">
+      <Declaration><![CDATA[PROPERTY LastRecvBytes : udint]]></Declaration>
+      <Get Name="Get" Id="{81142a40-bd21-45a9-b97e-d7f74bee89c5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[LastRecvBytes := _LastRecvBytes;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="Receive" Id="{4e685bf0-efa8-45a4-9d21-63599140f2ab}">
+      <Declaration><![CDATA[METHOD Receive : DINT
+VAR_INPUT
+	pRecvAdr : POINTER TO BYTE;
+	nRecvSize : UDINT;
+END_VAR
+VAR
+	
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Receive := 0;
+IF pRecvAdr = 0 OR nRecvSize = 0 OR _Connected = FALSE THEN
+	RETURN;
+ELSE
+	fbSocketReceive.hSocket := _hSocket;
+	fbSocketReceive.pDest := pRecvAdr;
+	fbSocketReceive.cbLen := nRecvSize;
+	fbSocketReceive.bExecute := TRUE;
+	fbSocketReceive(
+		sSrvNetId:= '', 
+		hSocket:= , 
+		cbLen:= , 
+		pDest:= , 
+		bExecute:= , 
+		tTimeout:= , 
+		bBusy=> , 
+		bError=> , 
+		nErrId=> , 
+		nRecBytes=> );
+	IF NOT fbSocketReceive.bBusy THEN
+		fbSocketReceive(bExecute := FALSE);
+		IF NOT fbSocketReceive.bError THEN
+			_LastRecvBytes := fbSocketReceive.nRecBytes;
+			_RecvdCounter := _RecvdCounter + 1;
+			_RecvdBytes := _RecvdBytes + fbSocketReceive.nRecBytes;
+			Receive := 1; 
+			IF _SktPara.EnableRecvLog = TRUE AND fbSocketReceive.nRecBytes > 0 THEN
+				ADSLOGSTR(msgCtrlMask:= ADSLOG_MSGTYPE_LOG, msgFmtStr:= 'RecvMsg : %s', strArg:= UDINT_TO_STRING(fbSocketReceive.nRecBytes));
+			END_IF
+			
+		ELSE
+			_Error := fbSocketReceive.bError;
+			_ErrorID := fbSocketReceive.nErrId;
+			Receive := -2;
+		END_IF
+			
+	END_IF
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Reconnect" Id="{af80beb5-3a51-4a90-a5ee-125fea0fc637}">
+      <Declaration><![CDATA[METHOD Reconnect : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[fbSocketConnect.bEnable := FALSE;
+fbSocketConnect();
+fbSocketConnect.bEnable := TRUE;
+fbSocketConnect();
+Reconnect := TRUE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="RecvdBytes" Id="{cc02ab9d-8f78-4f3c-a4ad-dca413348f60}">
+      <Declaration><![CDATA[PROPERTY RecvdBytes : UDINT]]></Declaration>
+      <Get Name="Get" Id="{e3677c58-49d1-4027-9788-ef00db253301}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[RecvdBytes := _RecvdBytes;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{33589e8e-644f-4ec0-b020-a21a8f32e83d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_RecvdBytes := RecvdBytes;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="RecvdCounter" Id="{64c456e6-000a-4bce-bfee-5dfd22050ec7}">
+      <Declaration><![CDATA[PROPERTY RecvdCounter : UDINT]]></Declaration>
+      <Get Name="Get" Id="{f2ab1dd8-d7ad-4458-8276-d002172eadaf}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[RecvdCounter := _RecvdCounter;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{744226fe-db6e-4049-918b-66d3d05d035c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_RecvdCounter := RecvdCounter;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="Send" Id="{73d0f82e-0a8d-4915-81cc-b11b82bd4edc}">
+      <Declaration><![CDATA[METHOD Send : DINT
+VAR_INPUT
+	pSendAdr : POINTER TO BYTE;
+	nSendSize : UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Send := 0;
+IF pSendAdr = 0 OR nSendSize = 0 OR _Connected = FALSE THEN
+	RETURN;
+ELSE
+	fbSocketSend.hSocket := _hSocket;
+	fbSocketSend.pSrc := pSendAdr;
+	fbSocketSend.cbLen := nSendSize;
+	fbSocketSend.bExecute := TRUE;
+	fbSocketSend(
+		sSrvNetId:= '', 
+		hSocket:= , 
+		cbLen:= , 
+		pSrc:= , 
+		bExecute:= , 
+		tTimeout:= , 
+		bBusy=> , 
+		bError=> , 
+		nErrId=> );
+	
+	IF NOT fbSocketSend.bBusy THEN
+		fbSocketSend(bExecute:= FALSE);
+		IF NOT fbSocketSend.bError THEN
+			Send := 1;
+			_SentCounter := _SentCounter + 1;
+			_SentBytes := _SentBytes + nSendSize;
+			IF _SktPara.EnableSendLog = TRUE THEN
+				ADSLOGSTR(msgCtrlMask:= ADSLOG_MSGTYPE_LOG, msgFmtStr:= 'SendBytes : %s', strArg:= UDINT_TO_STRING(nSendSize));
+			END_IF
+			
+		ELSE
+			_Error := fbSocketSend.bError;
+			_ErrorID := fbSocketSend.nErrId;
+			Send := -1;
+		END_IF
+	END_IF
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="SendBytes" Id="{fe31c69c-6f69-4b3f-b032-212c217abf2a}">
+      <Declaration><![CDATA[PROPERTY SendBytes : UDINT]]></Declaration>
+      <Get Name="Get" Id="{3e1bc185-a352-4773-ad23-1abac83347a1}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[SendBytes := _SentBytes;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{57df33da-aeff-4c56-97b2-e72ea7a8dc2f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_SentBytes := SendBytes;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="SendCounter" Id="{d1a85dd2-2014-4a3f-b86f-972e0d4edd7e}">
+      <Declaration><![CDATA[PROPERTY SendCounter : UDINT]]></Declaration>
+      <Get Name="Get" Id="{64be007c-d27a-4f72-bf91-e6dc6953df3f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[SendCounter := _SentCounter;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{67efbea5-3c10-4244-a7f6-efcca8c2144a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_SentCounter := SendCounter;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="SendRecive" Id="{f9ab08b0-0d92-4b3d-904c-6e975d3d0f37}">
+      <Declaration><![CDATA[METHOD INTERNAL SendRecive : DINT
+VAR_INPUT
+	pSendAdr : POINTER TO BYTE;
+	nSendSize : UDINT;
+	pRecvAdr : POINTER TO BYTE;
+	nRecvSize : UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SendRecive := 0;
+IF pSendAdr = 0 OR nSendSize = 0 OR pRecvAdr = 0 OR nRecvSize = 0 OR _Connected = FALSE THEN
+	RETURN;
+ELSE
+	CASE StepSendReceive OF	
+	0:
+		fbSocketSend.hSocket := _hSocket;
+		fbSocketSend.pSrc := pSendAdr;
+		fbSocketSend.cbLen := nSendSize;
+		fbSocketSend.bExecute := TRUE;
+		fbSocketSend();
+	
+		IF NOT fbSocketSend.bBusy THEN
+			fbSocketSend(bExecute:= FALSE);
+			IF NOT fbSocketSend.bError THEN
+				StepSendReceive := 10;
+				_SentCounter := _SentCounter + 1;
+				_SentBytes := _SentBytes + nSendSize;
+			ELSE
+				_Error := fbSocketSend.bError;
+				_ErrorID := fbSocketSend.nErrId;
+				SendRecive := -1;
+				StepSendReceive := 0;
+			END_IF
+		END_IF
+
+	
+	10:
+		fbSocketReceive.hSocket := _hSocket;
+		fbSocketReceive.pDest := pRecvAdr;
+		fbSocketReceive.cbLen := nRecvSize;
+		fbSocketReceive.bExecute := TRUE;
+		fbSocketReceive();
+		IF NOT fbSocketReceive.bBusy THEN
+			fbSocketReceive(bExecute := FALSE);
+			IF NOT fbSocketReceive.bError THEN
+				IF fbSocketReceive.nRecBytes > 0 THEN
+					_LastRecvBytes := fbSocketReceive.nRecBytes;
+					_RecvdCounter := _RecvdCounter + 1;
+					_RecvdBytes := _RecvdBytes + fbSocketReceive.nRecBytes;
+					RecvTimes := 0;
+					SendRecive := 1;
+					StepSendReceive := 0;
+				ELSE
+					IF RecvTimes > 10 THEN
+						SendRecive := -3;
+						StepSendReceive := 0;
+					ELSE
+						RecvTimes := RecvTimes + 1;
+					END_IF
+				END_IF
+			ELSE
+				_Error := fbSocketReceive.bError;
+				_ErrorID := fbSocketReceive.nErrId;
+				SendRecive := -2;
+				StepSendReceive := 0;
+			END_IF
+		END_IF
+
+	//12:
+		
+		
+	END_CASE
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SendRecv" Id="{f498d759-170e-47a2-9683-f9484b0d4d5d}">
+      <Declaration><![CDATA[METHOD SendRecv : DINT
+VAR_INPUT
+	pSendAdr : POINTER TO BYTE;
+	nSendSize : UDINT;
+	pRecvAdr : POINTER TO BYTE;
+	nRecvSize : UDINT;
+END_VAR
+VAR
+	hrSend : DINT;
+	hrRecv : DINT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SendRecv := 0;
+TonTryRecvTimeout(IN:= , PT:= _SktPara.SendRecvTimeOut, Q=> , ET=> );
+IF pSendAdr = 0 OR nSendSize = 0 OR pRecvAdr = 0 OR nRecvSize = 0 OR _Connected = FALSE THEN
+	RETURN;
+ELSE
+	CASE StepSendRecv OF	
+	0:
+		hrSend := Send(pSendAdr, nSendSize);
+		CASE hrSend OF
+		1:
+			StepSendRecv := 10;
+			
+		ELSE
+			SendRecv := hrSend;
+		END_CASE
+	10:
+		hrRecv := Receive(pRecvAdr, nRecvSize);
+		CASE hrRecv OF
+		0:
+			;
+		1:
+			IF _LastRecvBytes > 0 THEN
+				TryRecvTimes := 0;
+				SendRecv := 1;
+				TonTryRecvTimeout.IN := FALSE;
+				StepSendRecv := 0;
+			ELSE
+				TonTryRecvTimeout.IN := TRUE;
+				IF TonTryRecvTimeout.Q THEN
+					SendRecv := -4;
+					StepSendRecv := 0;
+					TonTryRecvTimeout.IN := FALSE;
+				END_IF
+			END_IF
+			
+		ELSE
+			SendRecv := hrRecv;
+		END_CASE
+	//12:
+		
+		
+	END_CASE
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="SktPara" Id="{73d3ece1-e27a-4534-b4eb-7d40ae06140d}">
+      <Declaration><![CDATA[PROPERTY SktPara : stSktPara]]></Declaration>
+      <Get Name="Get" Id="{ddb369ba-db17-44bb-afd3-27e02e0f36f3}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[SktPara := _SktPara;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{371f0b81-7a68-4277-a5f0-40c4c25ea64e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_SktPara := SktPara;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <LineIds Name="SimpleTcpClient">
+      <LineId Id="36" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.ClearDiagData">
+      <LineId Id="6" Count="2" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.Connect">
+      <LineId Id="52" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="53" Count="2" />
+      <LineId Id="59" Count="0" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="63" Count="1" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="29" Count="1" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="35" Count="1" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.Connected.Get">
+      <LineId Id="2" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.Disconnect">
+      <LineId Id="6" Count="1" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="17" Count="2" />
+      <LineId Id="13" Count="1" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="20" Count="1" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.Error.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.ErrorID.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.GetLinkStatus">
+      <LineId Id="13" Count="0" />
+      <LineId Id="17" Count="1" />
+      <LineId Id="6" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="22" Count="1" />
+      <LineId Id="25" Count="1" />
+      <LineId Id="24" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.hSocket.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.LastRecvBytes.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.Receive">
+      <LineId Id="5" Count="0" />
+      <LineId Id="9" Count="1" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="14" Count="2" />
+      <LineId Id="18" Count="9" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="45" Count="1" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="50" Count="2" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="37" Count="1" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="12" Count="1" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.Reconnect">
+      <LineId Id="8" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.RecvdBytes.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.RecvdBytes.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.RecvdCounter.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.RecvdCounter.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.Send">
+      <LineId Id="37" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="22" Count="3" />
+      <LineId Id="13" Count="8" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="38" Count="1" />
+      <LineId Id="41" Count="2" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.SendBytes.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.SendBytes.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.SendCounter.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.SendCounter.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.SendRecive">
+      <LineId Id="5" Count="0" />
+      <LineId Id="11" Count="2" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="45" Count="3" />
+      <LineId Id="58" Count="5" />
+      <LineId Id="136" Count="1" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="119" Count="2" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="68" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="109" Count="1" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="75" Count="3" />
+      <LineId Id="89" Count="3" />
+      <LineId Id="116" Count="1" />
+      <LineId Id="138" Count="1" />
+      <LineId Id="126" Count="0" />
+      <LineId Id="125" Count="0" />
+      <LineId Id="135" Count="0" />
+      <LineId Id="127" Count="0" />
+      <LineId Id="129" Count="1" />
+      <LineId Id="134" Count="0" />
+      <LineId Id="132" Count="1" />
+      <LineId Id="131" Count="0" />
+      <LineId Id="124" Count="0" />
+      <LineId Id="95" Count="2" />
+      <LineId Id="122" Count="1" />
+      <LineId Id="99" Count="0" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="100" Count="2" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="10" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.SendRecv">
+      <LineId Id="10" Count="0" />
+      <LineId Id="86" Count="0" />
+      <LineId Id="11" Count="4" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="101" Count="0" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="108" Count="0" />
+      <LineId Id="105" Count="1" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="100" Count="0" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="111" Count="1" />
+      <LineId Id="109" Count="0" />
+      <LineId Id="77" Count="0" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="91" Count="1" />
+      <LineId Id="84" Count="1" />
+      <LineId Id="87" Count="1" />
+      <LineId Id="90" Count="0" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="89" Count="0" />
+      <LineId Id="80" Count="0" />
+      <LineId Id="115" Count="0" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="68" Count="4" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.SktPara.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SimpleTcpClient.SktPara.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

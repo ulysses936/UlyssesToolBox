@@ -3,82 +3,64 @@
   <PropertyGroup>
     <FileVersion>1.0.0.0</FileVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{6d64ef4c-4ef0-4bf0-be53-db463f347d0b}</ProjectGuid>
+    <ProjectGuid>{8384a582-947b-49d8-b6d2-45ff5f854026}</ProjectGuid>
     <SubObjectsSortedByName>True</SubObjectsSortedByName>
     <DownloadApplicationInfo>true</DownloadApplicationInfo>
     <WriteProductVersion>true</WriteProductVersion>
     <GenerateTpy>false</GenerateTpy>
-    <Name>PLC851</Name>
+    <Name>UlyssesToolBox</Name>
     <ProgramVersion>3.1.4024.0</ProgramVersion>
-    <Application>{acf39143-5075-471b-8fc0-b20309fbe827}</Application>
-    <TypeSystem>{68f9348c-5cfd-4646-b3e7-50131963a68d}</TypeSystem>
-    <Implicit_Task_Info>{c054a91e-f880-450a-8e68-9ff18ac406b6}</Implicit_Task_Info>
-    <Implicit_KindOfTask>{83aca98d-e598-4e1e-8657-ed900df30964}</Implicit_KindOfTask>
-    <Implicit_Jitter_Distribution>{8362f872-b2cb-4ae4-88e1-4bbcb109ca8f}</Implicit_Jitter_Distribution>
-    <LibraryReferences>{cd236a3a-c13d-4b4d-9d0a-fe007a2b8ea1}</LibraryReferences>
-    <Company>HellWood</Company>
+    <Application>{f352eded-ef96-4a91-8075-9b94afc8e11f}</Application>
+    <TypeSystem>{939b91b3-1d85-4840-bcb7-cfba922574cc}</TypeSystem>
+    <Implicit_Task_Info>{37fa9c39-0120-4c4f-96f7-1d6bbc94f056}</Implicit_Task_Info>
+    <Implicit_KindOfTask>{f111b723-80d1-467c-b10a-f2c3c5f04d91}</Implicit_KindOfTask>
+    <Implicit_Jitter_Distribution>{2ea461d4-c039-4826-92f9-10cf9a73c5e1}</Implicit_Jitter_Distribution>
+    <LibraryReferences>{bde338c4-2620-47ee-b5eb-fdf46a83ec0b}</LibraryReferences>
+    <Company>NoCompany</Company>
     <Released>false</Released>
     <Title>UlyssesToolBox</Title>
-    <ProjectVersion>0.0.0.1</ProjectVersion>
+    <ProjectVersion>1.0.0.1</ProjectVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="MAIN.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="PlcTask.TcTTO">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Test\OOPChainCallTest\Filtersample.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Test\OOPChainCallTest\Interfaces\ITFBASE.TcIO">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Test\OOPChainCallTest\Interfaces\I_ITF1.TcIO">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Test\OOPChainCallTest\Interfaces\I_ITF2.TcIO">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TF06Connectivity\TCPIP\FB_TcpSendReceive.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TF06Connectivity\TCPIP\FB_TcpSendReceiving.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TF06Connectivity\TCPIP\FB_TcpSendReceivingQueue.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TF06Connectivity\TCPIP\SimpleClient\SimpleTcpClient.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TF06Connectivity\TCPIP\SimpleClient\stConnState.TcDUT">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TF06Connectivity\TCPIP\SimpleClient\stSktPara.TcDUT">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TF06Connectivity\TCPIP\TcpTaskQueue\FB_SimpleTcpTaskQueue.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TF06Connectivity\TCPIP\TcpTaskQueue\ST_TcpTask.TcDUT">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TF06Connectivity\TCPIP\TcpTaskQueue\ST_TcpTaskBuffer.TcDUT">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TF06Connectivity\TCPIP\TcpTaskQueue2\FB_SimpleTcpTaskQueue2.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TF06Connectivity\TCPIP\TcpTaskQueue2\ST_TcpTaskBuffer2.TcDUT">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TF06Connectivity\TCPIP\TcpTaskQueue2\ST_TcpTask2.TcDUT">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TF06Connectivity\TCPIP\[obsolete]\FB_TcpSendReceivingHistroy.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
+    <None Include="UlyssesToolBox.tmc">
+      <SubType>Content</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="TF04Controller" />
+    <Folder Include="TF04Controller\TempController" />
+    <Folder Include="TF05Motion" />
+    <Folder Include="TF05Motion\PlcProfileMotion" />
+    <Folder Include="TF05Motion\SimpleAxis" />
+    <Folder Include="TF06Connectivity" />
+    <Folder Include="TF06Connectivity\TCPIP" />
+    <Folder Include="TF06Connectivity\TCPIP\SimpleClient" />
+    <Folder Include="TF06Connectivity\TCPIP\TcpTaskQueue" />
+    <Folder Include="TF06Connectivity\TCPIP\TcpTaskQueue2" />
+    <Folder Include="TF06Connectivity\TCPIP\[obsolete]" />
+    <Folder Include="TF11PlcSystem" />
+    <Folder Include="TF11PlcSystem\AnalogScale" />
+    <Folder Include="TF11PlcSystem\ET_DoubleBuffer" />
+    <Folder Include="TF11PlcSystem\File" />
+    <Folder Include="TF11PlcSystem\IO" />
+    <Folder Include="TF11PlcSystem\Logger" />
+    <Folder Include="TF11PlcSystem\NumberConversionFun" />
+    <Folder Include="TF11PlcSystem\SequenceHandle" />
+    <Folder Include="TF11PlcSystem\System" />
+    <Folder Include="TF11PlcSystem\System\File" />
+    <Folder Include="TF11PlcSystem\System\Pendulum4Tc" />
+    <Folder Include="TF11PlcSystem\System\Pendulum4Tc\DUTs" />
+    <Folder Include="TF11PlcSystem\System\Pendulum4Tc\Functions" />
+    <Folder Include="TF11PlcSystem\System\Pendulum4Tc\Helper" />
+    <Folder Include="TF11PlcSystem\System\Pendulum4Tc\Interface" />
+    <Folder Include="TF11PlcSystem\System\SystemInfo" />
+    <Folder Include="TF11PlcSystem\System\Time" />
+    <Folder Include="TF11PlcSystem\System\Time\DataTypes" />
+    <Folder Include="TF11PlcSystem\System\Time\FunctionBlocks" />
+    <Folder Include="TF11PlcSystem\System\Time\Functions" />
+    <Folder Include="TF11PlcSystem\System\Time\[obsolete]" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="TF04Controller\TempController\EasyTemp.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -104,6 +86,45 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="TF05Motion\SimpleAxis\ST_AxisSettings.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TF06Connectivity\TCPIP\FB_TcpSendReceive.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TF06Connectivity\TCPIP\FB_TcpSendReceiving.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TF06Connectivity\TCPIP\FB_TcpSendReceivingQueue.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TF06Connectivity\TCPIP\SimpleClient\SimpleTcpClient.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TF06Connectivity\TCPIP\SimpleClient\stConnState.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TF06Connectivity\TCPIP\SimpleClient\stSktPara.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TF06Connectivity\TCPIP\TcpTaskQueue2\FB_SimpleTcpTaskQueue2.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TF06Connectivity\TCPIP\TcpTaskQueue2\ST_TcpTask2.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TF06Connectivity\TCPIP\TcpTaskQueue2\ST_TcpTaskBuffer2.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TF06Connectivity\TCPIP\TcpTaskQueue\FB_SimpleTcpTaskQueue.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TF06Connectivity\TCPIP\TcpTaskQueue\ST_TcpTask.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TF06Connectivity\TCPIP\TcpTaskQueue\ST_TcpTaskBuffer.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TF06Connectivity\TCPIP\[obsolete]\FB_TcpSendReceivingHistroy.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="TF11PlcSystem\AnalogScale\AnalogScale.TcPOU">
@@ -148,7 +169,13 @@
     <Compile Include="TF11PlcSystem\System\Pendulum4Tc\Constants.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="TF11PlcSystem\System\Pendulum4Tc\Day.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="TF11PlcSystem\System\Pendulum4Tc\DUTs\E_TimeSource.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TF11PlcSystem\System\Pendulum4Tc\DUTs\PtWeekDay.TcTLEO">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="TF11PlcSystem\System\Pendulum4Tc\DUTs\ST_WinsowsTimeZone.TcDUT">
@@ -164,6 +191,9 @@
     <Compile Include="TF11PlcSystem\System\Pendulum4Tc\Helper\calcDayNumber.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="TF11PlcSystem\System\Pendulum4Tc\Helper\calcPreciseDiff.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="TF11PlcSystem\System\Pendulum4Tc\Helper\isDateTimeEqual.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -171,9 +201,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="TF11PlcSystem\System\Pendulum4Tc\Helper\PtPreciseDiff.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TF11PlcSystem\System\Pendulum4Tc\Helper\calcPreciseDiff.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="TF11PlcSystem\System\Pendulum4Tc\Interface\I_PtDateTime.TcIO">
@@ -185,16 +212,10 @@
     <Compile Include="TF11PlcSystem\System\Pendulum4Tc\Interface\I_PtTimesource.TcIO">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="TF11PlcSystem\System\Pendulum4Tc\PtDateTime.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TF11PlcSystem\System\Pendulum4Tc\Day.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TF11PlcSystem\System\Pendulum4Tc\DUTs\PtWeekDay.TcTLEO">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="TF11PlcSystem\System\Pendulum4Tc\Pendulum4Tc.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TF11PlcSystem\System\Pendulum4Tc\PtDateTime.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="TF11PlcSystem\System\Pendulum4Tc\PtHelper.TcPOU">
@@ -252,112 +273,6 @@
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
-  <ItemGroup>
-    <PlaceholderReference Include="CAA Memory">
-      <DefaultResolution>CAA Memory, * (CAA Technical Workgroup)</DefaultResolution>
-      <Namespace>MEM</Namespace>
-    </PlaceholderReference>
-    <PlaceholderReference Include="SPT Utilities">
-      <DefaultResolution>SPT Utilities, * (Beckhoff Automation LLC)</DefaultResolution>
-      <Namespace>SPT_Utilities</Namespace>
-    </PlaceholderReference>
-    <PlaceholderReference Include="SysFile">
-      <DefaultResolution>SysFile, * (System)</DefaultResolution>
-      <Namespace>SysFile</Namespace>
-    </PlaceholderReference>
-    <PlaceholderReference Include="SysTypes">
-      <DefaultResolution>SysTypes, * (System)</DefaultResolution>
-      <Namespace>SysTypes</Namespace>
-    </PlaceholderReference>
-    <PlaceholderReference Include="Tc2_EtherCAT">
-      <DefaultResolution>Tc2_EtherCAT, * (Beckhoff Automation GmbH)</DefaultResolution>
-      <Namespace>Tc2_EtherCAT</Namespace>
-    </PlaceholderReference>
-    <PlaceholderReference Include="Tc2_MC2">
-      <DefaultResolution>Tc2_MC2, * (Beckhoff Automation GmbH)</DefaultResolution>
-      <Namespace>Tc2_MC2</Namespace>
-    </PlaceholderReference>
-    <PlaceholderReference Include="Tc2_Standard">
-      <DefaultResolution>Tc2_Standard, * (Beckhoff Automation GmbH)</DefaultResolution>
-      <Namespace>Tc2_Standard</Namespace>
-    </PlaceholderReference>
-    <PlaceholderReference Include="Tc2_System">
-      <DefaultResolution>Tc2_System, * (Beckhoff Automation GmbH)</DefaultResolution>
-      <Namespace>Tc2_System</Namespace>
-    </PlaceholderReference>
-    <PlaceholderReference Include="Tc2_TcpIp">
-      <DefaultResolution>Tc2_TcpIp, * (Beckhoff Automation GmbH)</DefaultResolution>
-      <Namespace>Tc2_TcpIp</Namespace>
-    </PlaceholderReference>
-    <PlaceholderReference Include="Tc2_Utilities">
-      <DefaultResolution>Tc2_Utilities, * (Beckhoff Automation GmbH)</DefaultResolution>
-      <Namespace>Tc2_Utilities</Namespace>
-    </PlaceholderReference>
-    <PlaceholderReference Include="Tc3_DynamicMemory">
-      <DefaultResolution>Tc3_DynamicMemory, * (Beckhoff Automation GmbH)</DefaultResolution>
-      <Namespace>Tc3_DynamicMemory</Namespace>
-    </PlaceholderReference>
-    <PlaceholderReference Include="Tc3_EventLogger">
-      <DefaultResolution>Tc3_EventLogger, * (Beckhoff Automation GmbH)</DefaultResolution>
-      <Namespace>Tc3_EventLogger</Namespace>
-    </PlaceholderReference>
-    <PlaceholderReference Include="Tc3_JsonXml">
-      <DefaultResolution>Tc3_JsonXml, * (Beckhoff Automation GmbH)</DefaultResolution>
-      <Namespace>Tc3_JsonXml</Namespace>
-    </PlaceholderReference>
-    <PlaceholderReference Include="Tc3_MC2_AdvancedHoming">
-      <DefaultResolution>Tc3_MC2_AdvancedHoming, * (Beckhoff Automation GmbH)</DefaultResolution>
-      <Namespace>Tc3_MC2_AdvancedHoming</Namespace>
-    </PlaceholderReference>
-    <PlaceholderReference Include="Tc3_Module">
-      <DefaultResolution>Tc3_Module, * (Beckhoff Automation GmbH)</DefaultResolution>
-      <Namespace>Tc3_Module</Namespace>
-    </PlaceholderReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Test" />
-    <Folder Include="Test\OOPChainCallTest" />
-    <Folder Include="Test\OOPChainCallTest\Interfaces" />
-    <Folder Include="TF05Motion\PlcProfileMotion" />
-    <Folder Include="TF06Connectivity\TCPIP\[obsolete]" />
-    <Folder Include="TF04Controller" />
-    <Folder Include="TF04Controller\TempController" />
-    <Folder Include="TF11PlcSystem" />
-    <Folder Include="TF06Connectivity" />
-    <Folder Include="TF06Connectivity\TCPIP" />
-    <Folder Include="TF06Connectivity\TCPIP\TcpTaskQueue">
-      <ExcludeFromBuild>true</ExcludeFromBuild>
-    </Folder>
-    <Folder Include="TF06Connectivity\TCPIP\SimpleClient" />
-    <Folder Include="TF06Connectivity\TCPIP\TcpTaskQueue2" />
-    <Folder Include="TF05Motion" />
-    <Folder Include="TF05Motion\SimpleAxis" />
-    <Folder Include="TF11PlcSystem\AnalogScale" />
-    <Folder Include="TF11PlcSystem\IO" />
-    <Folder Include="TF11PlcSystem\File" />
-    <Folder Include="TF11PlcSystem\ET_DoubleBuffer" />
-    <Folder Include="TF11PlcSystem\Logger" />
-    <Folder Include="TF11PlcSystem\NumberConversionFun" />
-    <Folder Include="TF11PlcSystem\SequenceHandle" />
-    <Folder Include="TF11PlcSystem\System" />
-    <Folder Include="TF11PlcSystem\System\File" />
-    <Folder Include="TF11PlcSystem\System\SystemInfo" />
-    <Folder Include="TF11PlcSystem\System\Pendulum4Tc" />
-    <Folder Include="TF11PlcSystem\System\Pendulum4Tc\DUTs" />
-    <Folder Include="TF11PlcSystem\System\Pendulum4Tc\Functions" />
-    <Folder Include="TF11PlcSystem\System\Pendulum4Tc\Helper" />
-    <Folder Include="TF11PlcSystem\System\Pendulum4Tc\Interface" />
-    <Folder Include="TF11PlcSystem\System\Time" />
-    <Folder Include="TF11PlcSystem\System\Time\DataTypes" />
-    <Folder Include="TF11PlcSystem\System\Time\FunctionBlocks" />
-    <Folder Include="TF11PlcSystem\System\Time\Functions" />
-    <Folder Include="TF11PlcSystem\System\Time\[obsolete]" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="PLC851.tmc">
-      <SubType>Content</SubType>
-    </None>
-  </ItemGroup>
   <ProjectExtensions>
     <PlcProjectOptions>
       <XmlArchive>
@@ -368,6 +283,12 @@
         <v>{192FAD59-8248-4824-A8DE-9177C94C195A}</v>
         <o>
           <v n="Name">"{192FAD59-8248-4824-A8DE-9177C94C195A}"</v>
+          <d n="SubKeys" t="Hashtable" />
+          <d n="Values" t="Hashtable" />
+        </o>
+        <v>{246001F4-279D-43AC-B241-948EB31120E1}</v>
+        <o>
+          <v n="Name">"{246001F4-279D-43AC-B241-948EB31120E1}"</v>
           <d n="SubKeys" t="Hashtable" />
           <d n="Values" t="Hashtable" />
         </o>

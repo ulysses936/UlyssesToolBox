@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_TzInfoBiasToTzStr" Id="{874d6c6f-5261-496a-aa14-1bc6118e7be6}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_TzInfoBiasToTzStr : STRING
+VAR_INPUT
+	tzBias : DINT;
+END_VAR
+VAR
+	UtcOffset : DINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[UtcOffset := (0-tzBias) / 60;
+IF UtcOffset > 0 AND UtcOffset < 10 THEN
+	F_TzInfoBiasToTzStr := CONCAT(STR1:= 'UTC+0', STR2:= DINT_TO_STRING(UtcOffset));
+ELSIF UtcOffset >= 10 AND UtcOffset <= 12 THEN
+	F_TzInfoBiasToTzStr := CONCAT(STR1:= 'UTC+', STR2:= DINT_TO_STRING(UtcOffset));
+ELSIF UtcOffset < 0 AND UtcOffset > -10 THEN
+	F_TzInfoBiasToTzStr := CONCAT(STR1:= 'UTC-0', STR2:= DINT_TO_STRING(UtcOffset));
+ELSIF UtcOffset <=10 AND UtcOffset >= -12 THEN
+	F_TzInfoBiasToTzStr := CONCAT(STR1:= 'UTC-', STR2:= DINT_TO_STRING(UtcOffset));
+ELSIF UtcOffset = 0 THEN
+	F_TzInfoBiasToTzStr := 'UTC';
+END_IF
+]]></ST>
+    </Implementation>
+    <LineIds Name="F_TzInfoBiasToTzStr">
+      <LineId Id="7" Count="0" />
+      <LineId Id="17" Count="1" />
+      <LineId Id="20" Count="7" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="16" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="isDateTimeEqual" Id="{053e453d-7106-426a-b64e-3a228d0c398f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION isDateTimeEqual : bool
+VAR_INPUT
+	D1 : PtDateTime;
+	D2 : PtDateTime;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[isDateTimeEqual 
+:= D1.Year = D2.Year
+AND D1.Month = D2.Month
+AND D1.Day = D2.Day
+AND D1.Hour = D2.Hour
+AND D1.Minute = D2.Minute
+AND D1.Second = D2.Second
+AND D1.Microsecond = D2.Microsecond
+AND D1.TimeZone = D2.TimeZone;]]></ST>
+    </Implementation>
+    <LineIds Name="isDateTimeEqual">
+      <LineId Id="7" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="13" Count="5" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

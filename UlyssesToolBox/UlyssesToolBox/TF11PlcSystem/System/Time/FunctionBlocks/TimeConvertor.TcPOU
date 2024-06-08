@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="TimeConvertor" Id="{e1ad951e-bed6-4619-bb16-78dcbf2fd0cf}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK TimeConvertor
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="fromfiletime64" Id="{40514550-2e7d-4dac-83e9-9550db830ce5}">
+      <Declaration><![CDATA[METHOD fromfiletime64 : ST_TimeConvertor
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="TimeConvertor">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="TimeConvertor.fromfiletime64">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

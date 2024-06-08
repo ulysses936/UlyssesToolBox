@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="DI_Input" Id="{a586ad3b-b36b-40cc-a2e8-dfac9c0e8229}" SpecialFunc="None">
+    <Declaration><![CDATA[{attribute 'no_check'}
+(* 
+按钮功能块 Button
+按钮功能块，总体和Input差不多，针对按钮做了功能的完善可以将输入信号强制、反转或延迟
+*)
+FUNCTION_BLOCK DI_Input
+VAR_INPUT
+	Invert : BOOL := FALSE; (* False: 不反转Direct \ True: 在源头反转输入Invert Input *)
+	ForceOn : BOOL; (* 将输入强制为True, Force the In signal to True *)
+	ForceOff : BOOL; (* 将输入强制为True, Force the In signal to True *)
+	DelayTime : TIME := T#50MS; (* 延迟输出时间，T#0MS代表无延迟，也可充当滤波功能 *)
+	LED AT%Q* : BOOL; (* 如果按钮有LED，绑定到LED的输出上，功能块内部本身不控制LED，需要外部程序通过该输入引脚控制 *)
+END_VAR
+VAR_OUTPUT
+	Q : BOOL;(* 直接输出信号 *)
+	QRT : BOOL;(* 输入信号的上升沿 *)
+	QFT : BOOL;(* 输入信号的下降沿 *)
+	RawIn AT%I* :BOOL; (* 原始输入信号，未经强制、反转及延时 *) 
+END_VAR
+VAR
+	rTrig, rTrig_Delay : R_TRIG;
+	fTrig, fTrig_Delay : F_TRIG;
+	DelayIn : TON;
+	_InternalIn : BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+TIME		: 2024-01-19 17:02
+Version		: 1.0
+Creator		: Ulysses
+Reference	: IOTA - BLUE
+Commecnts	: 按钮功能块简化
+*)
+DelayIn(IN:= RawIn, PT:= DelayTime);
+IF DelayTime = T#0S THEN
+	(* 不带延迟 *)
+	_InternalIn := RawIn;
+ELSE
+	(* 带延迟 *)
+	_InternalIn := DelayIn.Q;
+END_IF
+Q := ((_InternalIn OR ForceOn) XOR Invert) AND NOT ForceOff;
+rTrig(CLK:= Q);
+fTrig(CLK:= Q);
+QRT := rTrig.Q;
+QFT := fTrig.Q;
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="DI_Input">
+      <LineId Id="269" Count="21" />
+      <LineId Id="56" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

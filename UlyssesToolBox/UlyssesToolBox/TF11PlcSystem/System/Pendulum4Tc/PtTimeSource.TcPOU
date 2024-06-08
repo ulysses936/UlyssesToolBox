@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="PtTimeSource" Id="{bd03b071-9921-4698-8b5e-ab4413b0e71e}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK PtTimeSource IMPLEMENTS I_PtTimesource
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	_DateTime : ptDateTime;
+	DefaultTimeZoneTime : TIMESTRUCT;
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="getDateTime" Id="{9d22dc5c-737f-41e3-afa4-f0f0acd9c93f}">
+      <Declaration><![CDATA[METHOD getDateTime : PtDateTime
+VAR_INPUT
+END_VAR
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+DefaultTimeZoneTime := FILETIME64_TO_SYSTEMTIME(fileTime:= F_GetSystemTime());
+_DateTime.Set(
+	Year:= DefaultTimeZoneTime.wYear, 
+	Month:= DefaultTimeZoneTime.wMonth, 
+	Day:= DefaultTimeZoneTime.wDay, 
+	Hour:= DefaultTimeZoneTime.wHour, 
+	Minute:= DefaultTimeZoneTime.wMinute, 
+	Second:= DefaultTimeZoneTime.wSecond, 
+	Microsecond:= DefaultTimeZoneTime.wMilliseconds, 
+	TimeZone:= 0);
+getDateTime := _DateTime;]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="PtTimeSource">
+      <LineId Id="12" Count="0" />
+    </LineIds>
+    <LineIds Name="PtTimeSource.getDateTime">
+      <LineId Id="18" Count="0" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="10" Count="7" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="20" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_ITF1" Id="{ed93771c-a717-4ce0-aba9-b3f38f5cd6d2}">
+    <Declaration><![CDATA[INTERFACE I_ITF1
+]]></Declaration>
+    <Method Name="METH1" Id="{b7062bfd-7c35-4ff2-b98b-84d99d3d0db7}">
+      <Declaration><![CDATA[METHOD METH1 : I_ITF1
+VAR_INPUT
+END_VAR
+]]></Declaration>
+    </Method>
+    <Property Name="Prop1" Id="{eeb3b7b2-05f8-4228-bf38-80030244bdf8}">
+      <Declaration><![CDATA[PROPERTY Prop1 : I_ITF2]]></Declaration>
+      <Get Name="Get" Id="{41b6756a-f53f-47c7-b363-6912d617a094}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>

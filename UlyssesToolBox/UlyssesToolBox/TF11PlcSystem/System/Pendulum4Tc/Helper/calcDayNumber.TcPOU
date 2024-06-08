@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="calcDayNumber" Id="{0e3f506b-4f80-4622-af25-aa8befb5aea2}" SpecialFunc="None">
+    <Declaration><![CDATA[(* 计算某个日期 *)
+FUNCTION calcDayNumber : dint
+VAR_INPUT
+	Year : DINT;
+	Month : DINT;
+	Day : DINT;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[month := (month + 9) MOD 12;
+year := year - month / 10;
+calcDayNumber := (
+        365 * year
+        + year / 4
+        - year / 100
+        + year / 400
+        + (month * 306 + 5) / 10
+        + (day - 1)
+    );]]></ST>
+    </Implementation>
+    <LineIds Name="calcDayNumber">
+      <LineId Id="30" Count="8" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

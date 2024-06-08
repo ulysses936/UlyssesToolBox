@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_PtTimesource" Id="{33c42691-f817-44a1-812e-0a01ddb29226}">
+    <Declaration><![CDATA[INTERFACE I_PtTimesource
+]]></Declaration>
+    <Method Name="getDateTime" Id="{893cc845-c23c-423d-9f71-b9d37c1869c5}">
+      <Declaration><![CDATA[METHOD getDateTime : PtDateTime
+VAR_INPUT
+END_VAR
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

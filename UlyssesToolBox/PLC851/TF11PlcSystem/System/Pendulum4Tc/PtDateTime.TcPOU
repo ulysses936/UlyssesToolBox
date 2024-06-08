@@ -1,0 +1,278 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="PtDateTime" Id="{9c733479-bff0-434a-9ceb-c663fdd00bd4}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK PtDateTime IMPLEMENTS I_PtDateTime
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	_Year : DINT;
+	_Month : DINT;
+	_Day : DINT;
+	_Hour : DINT;
+	_Minute : DINT;
+	_Second : DINT;
+	_Microsecond : DINT;
+	_TimeZone : DINT;
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Property Name="Day" Id="{fe9e7205-9b44-4e81-af58-a74ce464bc7d}">
+      <Declaration><![CDATA[PROPERTY Day : DINT]]></Declaration>
+      <Get Name="Get" Id="{dd281ff5-75a6-4779-b0d7-a446712244b9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Day := _Day;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{594675a8-789f-4319-9b2b-e9e0cde633ed}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_Day := Day;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="Diff" Id="{426f9979-572f-4a55-a26e-46110bd175bd}">
+      <Declaration><![CDATA[METHOD Diff : I_PtInterval
+VAR_INPUT
+	TargetDateTime : PtDateTime;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//Diff.Set(THIS^,TargetDateTime,TRUE);
+Pendulum._interval.Set(THIS^,TargetDateTime,TRUE);
+Diff := Pendulum._interval;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Hour" Id="{777aaebf-7dac-408f-be17-ce9179131ffb}">
+      <Declaration><![CDATA[PROPERTY Hour : DINT]]></Declaration>
+      <Get Name="Get" Id="{ab96bd36-c84e-4bfa-aab2-264fcc48045d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Hour := _Hour;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{61650289-5b4c-46a7-90f2-0e37a600c51d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_Hour := Hour;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Microsecond" Id="{6acf02b3-65b3-4953-887a-07b4d3bc6200}">
+      <Declaration><![CDATA[PROPERTY Microsecond : DINT]]></Declaration>
+      <Get Name="Get" Id="{d46e4975-d006-4d3b-b68d-fa61a13cccb3}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Microsecond := _Microsecond;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{dfa1a0fc-d2a3-410e-9810-26eeb44395a9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_Microsecond := Microsecond;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Minute" Id="{87fd9fbe-2977-487f-a486-30a4a9721474}">
+      <Declaration><![CDATA[PROPERTY Minute : DINT]]></Declaration>
+      <Get Name="Get" Id="{a45730f7-948c-4d9e-9a93-77ae9185fb41}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Minute := _Minute;
+]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{37489453-f520-4e2a-b3cc-a97e9c5fd303}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_Minute := Minute;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Month" Id="{7809000c-0ace-4d5a-bda4-718643e25354}">
+      <Declaration><![CDATA[PROPERTY Month : DINT]]></Declaration>
+      <Get Name="Get" Id="{1d31989b-e957-427d-90e1-6dbcb6c268e3}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Month := _Month;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{9c508cee-52fc-436d-be50-b4508a1391d5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_Month := Month;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Second" Id="{ee116c1b-0562-4572-930d-4ff27ed39f9a}">
+      <Declaration><![CDATA[PROPERTY Second : DINT]]></Declaration>
+      <Get Name="Get" Id="{b899b81d-c388-43f6-9671-533d46f8dd11}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Second := _Second;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{d6582638-188c-425a-9074-f062a1cd6473}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_Second := Second;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="Set" Id="{8cc1b098-ebe9-4963-8754-fc998fa77f3e}">
+      <Declaration><![CDATA[METHOD Set //: PtDateTime
+VAR_INPUT
+	Year : DINT;
+	Month : DINT;
+	Day : DINT;
+	Hour : DINT;
+	Minute : DINT;
+	Second : DINT;
+	Microsecond : DINT;
+	TimeZone : DINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^._Year := Year;
+THIS^._Month := Month;
+THIS^._Day := Day;
+THIS^._Hour := Hour;
+THIS^._Minute := Minute;
+THIS^._Second := Second;
+THIS^._Microsecond := Microsecond;
+THIS^._TimeZone := TimeZone;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="TimeZone" Id="{e19480f2-1dce-46fd-b540-5f4d8f72a740}">
+      <Declaration><![CDATA[PROPERTY TimeZone : DINT]]></Declaration>
+      <Get Name="Get" Id="{a62405e9-d3dd-4d3a-a783-2ef8d6d15aa3}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[TimeZone := _TimeZone;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{47188b50-955b-4522-b9be-e72d93aa72e2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_TimeZone := TimeZone;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Year" Id="{f90e6b7f-e4e5-4d6d-9541-0cf108a9e464}">
+      <Declaration><![CDATA[PROPERTY Year : DINT]]></Declaration>
+      <Get Name="Get" Id="{1057d9f6-c06f-40be-9e9e-29e1939bf543}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Year := _Year;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{8ddef1ea-0b29-4f80-8bb5-f55d069a6a02}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_Year := Year;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <LineIds Name="PtDateTime">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.Day.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.Day.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.Diff">
+      <LineId Id="9" Count="1" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="14" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.Hour.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.Hour.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.Microsecond.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.Microsecond.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.Minute.Get">
+      <LineId Id="2" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.Minute.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.Month.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.Month.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.Second.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.Second.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.Set">
+      <LineId Id="5" Count="0" />
+      <LineId Id="17" Count="6" />
+    </LineIds>
+    <LineIds Name="PtDateTime.TimeZone.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.TimeZone.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.Year.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="PtDateTime.Year.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

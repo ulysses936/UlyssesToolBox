@@ -1,0 +1,293 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="DataFileLogger" Id="{a7ae9404-a39a-44fe-93d9-5527e083ee21}" SpecialFunc="None">
+    <Declaration><![CDATA[{attribute 'no_check' := ''}
+//Extension to FB "DoubleBuffer" to write the recorded data cyclic into a file 
+{attribute 'enable_dynamic_creation'}
+FUNCTION_BLOCK DataFileLogger EXTENDS DoubleBuffer
+VAR_OUTPUT CONSTANT 
+	{attribute 'displaymode':='binary'}
+	OPTION_KEEP_FILE_ON_ERROR								: 	BYTE := 2#0000_0001; //Keep file open in error case to be able to contine after reset
+	{attribute 'displaymode':='binary'}
+	OPTION_START_WITH_NEW_FILE								: 	BYTE := 2#1000_0000; //Create empty file with enable flag instead open and continue existing file
+END_VAR                     								
+VAR_INPUT                   								
+	Enable													: 	BOOL; //Enable to write looked data cyclic into file  
+	ResetTrig												: 	BOOL; //Reset internal error 
+
+{attribute 'displaymode':='binary'}
+	Options													: 	BYTE := 2#00000000; // See outputs constant OPTION_xxx
+	Path													: 	STRING := 'C:\temp'; //Path and filename
+	Filetype												: 	STRING(6) := '.log'; //file tpye
+END_VAR                     								
+VAR_IN_OUT                  								
+END_VAR                     								
+VAR_OUTPUT       
+	TimeWriteFile											:	TIME; //Elapsed time to write data to file 
+	hFile													: 	UINT; //Current file handle
+	Busy													: 	BOOL; //Write msg to file active   
+	Error													: 	BOOL;     
+	{attribute 'displaymode':='hex'}   								
+	ErrorId													: 	UDINT; //Ads error Id of file handling function blocks or HRESULT (hr) ADS error code 
+END_VAR                     								
+VAR            
+//local ************************************************************************************
+	WriteCounter											:	UDINT; //Endless write counter fyi
+	State													: 	INT;
+	StartTimeWriteData										:	TIME;			
+
+//trigger *********************************************************************************
+
+//timer ***********************************************************************************
+
+//instances ***********************************************************************************             								
+	FILEOPEN												: 	FB_FileOpen := (sNetId:='',tTimeout:=DEFAULT_ADS_TIMEOUT, ePath:=PATH_GENERIC);
+	FILECLOSE												: 	FB_FileClose := (sNetId:='',tTimeout:=DEFAULT_ADS_TIMEOUT);
+	FILEWRITE												: 	FB_FileWrite := (sNetId:='',tTimeout:=DEFAULT_ADS_TIMEOUT);
+
+//Dummys ****************************************************************************************
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[	(* Data file logger based on two buffer concept 		*)
+	(********************************************************)
+
+(* Sequence started by method addData if buffer is filled ***************************************************)
+	CASE State OF
+	0:	
+		IF Error
+		THEN
+			IF ResetTrig OR NOT Enable
+			THEN
+				Error										:= FALSE;
+				ErrorId										:= 0;
+				hr											:= S_OK;
+
+				FileOpen(bExecute:=FALSE);	
+				FileClose(bExecute:=FALSE);	
+				FILEWRITE(bExecute:=FALSE);
+			ELSIF NOT OPtions.0 AND hFile <> 0	
+			THEN
+				FileClose(bExecute:=TRUE , hFile := hFile);
+				State										:= 3;
+			END_IF
+			
+		ELSIF Enable
+		THEN
+			IF hr <> S_OK
+			THEN //Method executed with error
+				Error										:= TRUE;
+				ErrorId										:= HRESULT_TO_ADSERROR(hr);
+			ELSIF hFile = 0
+			THEN
+				WriteCounter								:= 0;	
+				FileOpen(bExecute:= TRUE , sPathName:= CONCAT(Path,Filetype), nMode:=SEL(Options.7 ,FOPEN_MODEAPPEND,FOPEN_MODEWRITE) OR FOPEN_MODETEXT OR FOPEN_MODEPLUS );
+				State										:= 1;		
+			ELSIF ReadyToRead
+			THEN
+				FILEWRITE(bExecute:=TRUE ,hFile:= hFile , pWriteBuff := pDataToRead, cbWriteLen := SizeOfDataToRead);
+				StartTimeWriteData							:= TIME();
+				State										:= 2;			
+			END_IF
+		
+		ELSIF hFile <> 0
+		THEN //Not enabled
+			IF NOT Empty
+			THEN //Write rest of buffer		
+				IF NOT ReadyToRead THEN setReadyToRead(TRUE); END_IF 
+				FILEWRITE(bExecute:=ReadyToRead ,hFile:= hFile , pWriteBuff := pDataToRead, cbWriteLen := SizeOfDataToRead);
+				StartTimeWriteData							:= TIME();
+				State										:= 2;
+			ELSE
+				FileClose(bExecute:=TRUE , hFile := hFile);
+				state										:= 3;	
+			END_IF
+        END_IF
+     
+	(* Open file *******************************************************************************)                                          	
+	1:                       	
+		FileOpen();                                     	
+		IF NOT FileOpen.bBusy                           	
+		THEN                                            	
+			IF FileOpen.bError                          	
+			THEN            
+				Error										:= TRUE;                            	
+				ErrorId										:= FileOpen.nErrId;
+				State										:= 0;
+			ELSE                                     	
+				hFile										:= FileOpen.hFile;
+				IF ReadyToRead
+				THEN //Write request acitive
+					FILEWRITE(bExecute:=TRUE ,hFile:= hFile , pWriteBuff := pDataToRead, cbWriteLen := SizeOfDataToRead);
+					StartTimeWriteData						:= TIME();
+					State									:= 2;
+				ELSE
+					State									:= 0;
+				END_IF			
+			END_IF
+			FileOpen(bExecute:=FALSE);			
+		END_IF
+
+	(* Write data to file **********************************************************************)
+	2: 
+		FILEWRITE(hFile:= hFile);	
+		IF NOT FILEWRITE.bBusy
+		THEN
+			IF FILEWRITE.bError
+			THEN
+				Error										:= TRUE;       
+				ErrorId										:= FILEWRITE.nErrId;
+				state										:= 0;
+			ELSE                            
+				WriteCounter								:= WriteCounter + 1;
+				TimeWriteFile								:= TIME() - StartTimeWriteData;          	
+				State										:= 3;	
+				FileClose(bExecute:=TRUE , hFile := hFile);
+			END_IF	
+			setReadyToRead(FALSE); 
+			FILEWRITE(bExecute:=FALSE);          		
+		END_IF
+
+	(* Close File ******************************************************************************)
+	3: 
+		FileClose(hFile := hFile);
+		IF NOT FileClose.bBusy
+		THEN
+			IF FileClose.bError
+			THEN
+				Error										:= TRUE;       
+				ErrorId										:= FileClose.nErrId;
+				State										:= 0;
+			ELSE                                        		
+				hFile										:= 0;
+				State										:= 0;
+			END_IF
+			FileClose(bExecute:=FALSE);
+		END_IF
+	ELSE
+		;
+	END_CASE
+
+(* Ack ErrorIds **********************************************************)
+	Busy 													:= State <> 0;
+(**************************************************************************)
+
+
+
+]]></ST>
+    </Implementation>
+    <Method Name="addData" Id="{fc204871-5d20-4fcc-ae65-e9e605d44000}">
+      <Declaration><![CDATA[METHOD PUBLIC addData : HRESULT //Add data into write buffer and swap if if buffer is filled
+VAR_INPUT
+	pData													:	POINTER TO BYTE;
+	SizeofData												:	UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT Error
+THEN 
+	IF SUPER^.addData(pData,SizeOfData) <> S_OK
+	THEN
+		ErrorId												:= HRESULT_TO_ADSERROR(hr);
+		Error												:= TRUE;
+	END_IF
+ELSE
+	addData													:= SEL(Error , E_HRESULTADSERR.INVALIDACCESS ,E_HRESULTADSERR.ERROR);
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="addString" Id="{97204239-5569-4beb-b0a2-33bccc8cad9e}">
+      <Declaration><![CDATA[METHOD PUBLIC addString : HRESULT //Add string to write buffer and swap if buffer is filled
+VAR_INPUT
+	Data													:	T_MAXSTRING;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[addString := This^.addData(ADR(Data),TO_UDINT(LEN(Data)));]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="optKeepFileOnError" Id="{01b4bbc7-6e92-4c2b-89c2-4bff86c08fb7}">
+      <Declaration><![CDATA[PROPERTY PUBLIC optKeepFileOnError : BOOL]]></Declaration>
+      <Get Name="Get" Id="{57597dde-d3b4-428b-ba1e-c2fff293df87}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[optKeepFileOnError := Options.0;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{a37eb787-bf2d-462a-81ce-0b6326537b42}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Options.0				:= optKeepFileOnError;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="optStartNewFile" Id="{f6c9167c-7ae7-4569-bc71-7f6535206c63}">
+      <Declaration><![CDATA[PROPERTY PUBLIC optStartNewFile : BOOL]]></Declaration>
+      <Get Name="Get" Id="{d1008301-efce-4aae-a899-e0cc494b3e3a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[optStartNewFile := Options.7;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{7ba267d1-483e-49a4-b006-604185eb4e15}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Options.7				:= optStartNewFile;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <LineIds Name="DataFileLogger">
+      <LineId Id="1776" Count="16" />
+      <LineId Id="1991" Count="1" />
+      <LineId Id="1994" Count="1" />
+      <LineId Id="1793" Count="9" />
+      <LineId Id="1941" Count="0" />
+      <LineId Id="1803" Count="37" />
+      <LineId Id="1942" Count="0" />
+      <LineId Id="1841" Count="18" />
+      <LineId Id="1939" Count="0" />
+      <LineId Id="1860" Count="1" />
+      <LineId Id="2043" Count="0" />
+      <LineId Id="1862" Count="30" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="DataFileLogger.addData">
+      <LineId Id="300" Count="0" />
+      <LineId Id="295" Count="0" />
+      <LineId Id="299" Count="0" />
+      <LineId Id="309" Count="0" />
+      <LineId Id="312" Count="0" />
+      <LineId Id="311" Count="0" />
+      <LineId Id="310" Count="0" />
+      <LineId Id="297" Count="0" />
+      <LineId Id="296" Count="0" />
+      <LineId Id="256" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="DataFileLogger.addString">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="DataFileLogger.optKeepFileOnError.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="DataFileLogger.optKeepFileOnError.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="DataFileLogger.optStartNewFile.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="DataFileLogger.optStartNewFile.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

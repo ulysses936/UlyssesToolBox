@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="calcPreciseDiff" Id="{f66e0935-b020-47f7-9430-7ebbb082fc01}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION calcPreciseDiff : PtPreciseDiff
+VAR_INPUT
+	D1 : PtDateTime;
+	D2 : PtDateTime;
+END_VAR
+VAR
+	HourDiff : DINT;
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF isDateTimeEqual(D1, D2) THEN
+	calcPreciseDiff.Set(0,0,0,0,0,0,0,0);
+	RETURN;
+END_IF
+calcPreciseDiff.total_days := ABS(calcDayNumber(D1.Year, d1.Month, d1.Day) - calcDayNumber(D2.Year, d2.Month, d2.Day));
+]]></ST>
+    </Implementation>
+    <LineIds Name="calcPreciseDiff">
+      <LineId Id="26" Count="4" />
+      <LineId Id="14" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

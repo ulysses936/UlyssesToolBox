@@ -1,0 +1,167 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="System_TaskInfo" Id="{23e4a9df-9958-46d3-9111-ab3ad0dae806}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK System_TaskInfo
+VAR_INPUT
+	
+END_VAR
+VAR_OUTPUT
+	// Object ID of the task reference, from which the PLC program is called.
+	ObjId: UDINT;
+	// Set task cycle time in multiples of 100 ns
+	CycleTime: UDINT;
+	// Set task priority
+	Priority: UINT;
+	// ADS port of the task
+	AdsPort: UINT;
+	(* 
+	Cycle counter
+	Please note that the cycle counter refers to the actual system task 
+	and not to the task reference of the PLC project. The background to 
+	this is that several PLC projects or other TcCOM modules can share 
+	a task and these modules can thus access the same cycle counter. 
+	As a result, the cycle counter is reset during a TwinCAT restart in 
+	RUN mode (and not when resetting the PLC project). *)
+	CycleCount: UDINT;
+	// Distributed Clock System Time. It remains constant for a task runtime.
+	DcTaskTime: LINT;
+	// Cycle time required for the last cycle in multiples of 100 ns
+	LastExecTime: UDINT;
+	// During the first PLC task cycle, this variable has the value TRUE.
+	FirstCycle: BOOL;
+	(* 
+	This variable indicates whether the set task cycle time was exceeded.
+	The value of the CycleTimeExceeded variable is updated in each cycle. 
+	The variable is set to 0 if the previous cycle has been completed 
+	within its intended timeframe, otherwise to 1. *)
+	CycleTimeExceeded: BOOL;
+	(* 
+	This variable has the value TRUE if the origin of the current call 
+	is declared with the attribute 'TcCallAfterOutputUpdate'. *)
+	InCallAfterOutputUpdate: BOOL;
+	(* This variable has the value TRUE if the real-time limit is 
+	exceeded on a mixed core (Windows + real-time on one core). In this 
+	case the value TRUE refers to the core on which the corresponding 
+	task is running. *)
+	RTViolation: BOOL;
+	// Name of the task reference object in the PLC project (e.g. 'MyPlcProject_PlcTaskRef')
+	TaskName: STRING(63);
+END_VAR
+VAR
+	
+	_ThisTaskInfo: PlcTaskSystemInfo;
+	_AllTaskInfo : ARRAY[0..10] OF PlcTaskSystemInfo;
+	index : UDINT;
+	TaskCount : UDINT;
+	TaskIndex : DINT ;
+	
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[TaskCount := TwinCAT_SystemInfoVarList._AppInfo.TaskCnt;
+FOR index := 1 TO LIMIT(1,TaskCount,10)  DO
+	_AllTaskInfo[index] := TwinCAT_SystemInfoVarList._TaskInfo[index];
+END_FOR
+TaskIndex := GETCURTASKINDEXEX();
+_ThisTaskInfo := _AllTaskInfo[TaskIndex];
+
+_ThisTaskInfo := _TaskInfo[TaskIndex];
+ObjId := _ThisTaskInfo.ObjId; 
+CycleTime := _ThisTaskInfo.CycleTime;
+Priority := _ThisTaskInfo.Priority;
+AdsPort := _ThisTaskInfo.AdsPort;
+CycleCount := _ThisTaskInfo.CycleCount;
+DcTaskTime := _ThisTaskInfo.DcTaskTime;
+LastExecTime := _ThisTaskInfo.LastExecTime;
+FirstCycle := _ThisTaskInfo.FirstCycle;
+CycleTimeExceeded := _ThisTaskInfo.CycleTimeExceeded;
+InCallAfterOutputUpdate := _ThisTaskInfo.InCallAfterOutputUpdate;
+RTViolation := _ThisTaskInfo.RTViolation;
+
+TaskName := _ThisTaskInfo.TaskName;
+]]></ST>
+    </Implementation>
+    <Method Name="getCurrentTaskInfo" Id="{eabed3e6-3b9b-466c-9829-15399749e77c}">
+      <Declaration><![CDATA[METHOD getCurrentTaskInfo : REFERENCE TO PlcTaskSystemInfo
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[getCurrentTaskInfo REF= _ThisTaskInfo;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="getTaskCount" Id="{b0ba8701-2c67-4361-80c2-81c8bddbc1ba}">
+      <Declaration><![CDATA[METHOD getTaskCount : UDINT
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[getTaskCount := _AppInfo.TaskCnt;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="getTaskFirstIndex" Id="{498d1279-57c5-48ef-8a5b-4dab9231d9d5}">
+      <Declaration><![CDATA[METHOD getTaskFirstIndex : UDINT
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[getTaskFirstIndex := 1;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="getTaskInfoByIndex" Id="{1b42230b-8a39-4361-8e6b-25071b433320}">
+      <Declaration><![CDATA[METHOD getTaskInfoByIndex : REFERENCE TO PlcTaskSystemInfo
+VAR_INPUT
+	Index : UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF Index >= 1 AND index <= 10 THEN
+	getTaskInfoByIndex REF= _AllTaskInfo[Index];
+ELSE
+	getTaskInfoByIndex REF= _AllTaskInfo[0];
+END_IF
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="System_TaskInfo">
+      <LineId Id="82" Count="0" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="83" Count="1" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="31" Count="1" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="15" Count="0" />
+    </LineIds>
+    <LineIds Name="System_TaskInfo.getCurrentTaskInfo">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="System_TaskInfo.getTaskCount">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="System_TaskInfo.getTaskFirstIndex">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="System_TaskInfo.getTaskInfoByIndex">
+      <LineId Id="8" Count="1" />
+      <LineId Id="11" Count="1" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

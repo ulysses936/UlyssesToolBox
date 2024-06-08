@@ -1,0 +1,279 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_SimpleTcpTaskQueue2" Id="{0ddc28c6-38cd-4525-9bd5-f0bee7b01b00}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_SimpleTcpTaskQueue2
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	ActingQueue			: FB_MemRingBufferEx;
+	ArrActingQueue		: ARRAY[0..MAXBUFFERSIZE] OF ST_TcpTaskBuffer2;
+	
+	fbMemMan			: FB_DynMem_Manager2;
+	
+	PushTask	: ST_TcpTask2;
+	PullTask	: ST_TcpTask2;
+	EmptyTask	: ST_TcpTask2;
+	
+	StepTaskConsume : DINT;
+	
+	_NoTaskToConsume : BOOL;
+	_WaitingForTaskDone: BOOL;
+	_ActingTaskCount: UDINT;
+	_ActingUsedSize: UDINT;
+	_ActingFreeSize: UDINT;
+END_VAR
+VAR CONSTANT
+	MAXBUFFERSIZE: UDINT := 128;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[_CyclicLogic();]]></ST>
+    </Implementation>
+    <Method Name="_CyclicLogic" Id="{c0edbf78-4cc3-4647-beee-5fa58a14036d}">
+      <Declaration><![CDATA[METHOD PROTECTED _CyclicLogic : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[(* 获取队列负载数据 *)
+ActingQueue.A_GetFreeSize(pWrite:= , cbWrite:= , pBuffer:= ADR(ArrActingQueue), cbBuffer:= SIZEOF(ArrActingQueue), 
+	bOk=> , pRead=> , cbRead=> , nCount=> _ActingTaskCount, cbSize=> _ActingUsedSize, cbFree=> _ActingFreeSize);
+(* 状态显示 *)
+_NoTaskToConsume := (StepTaskConsume = 0);
+_WaitingForTaskDone := (StepTaskConsume <> 0);
+(* 如果队列中有事件，取出事件并等待Finish *)
+CASE StepTaskConsume OF
+	0:
+	_NoTaskToConsume := TRUE;
+	IF ActingQueue.nCount <> 0 THEN
+		StepTaskConsume := 10;
+	END_IF
+	
+	10:
+	ActingQueue.A_GetHead(pWrite:= , cbWrite:= , pBuffer:= ADR(ArrActingQueue), cbBuffer:= SIZEOF(ArrActingQueue), 
+	bOk=> , pRead=> , cbRead=> , nCount=> _ActingTaskCount, cbSize=> _ActingUsedSize, cbFree=> _ActingFreeSize);
+	IF ActingQueue.bOk THEN
+		MEMCPY(destAddr:= ADR(PullTask), srcAddr:= ActingQueue.pRead, n:= MIN(SIZEOF(PullTask),ActingQueue.cbRead));
+		StepTaskConsume := 20;
+	ELSE
+		StepTaskConsume := 0;
+		ADSLOGSTR(msgCtrlMask:= ADSLOG_MSGTYPE_ERROR OR ADSLOG_MSGTYPE_STRING,
+			msgFmtStr:= 'CyclicLogic: FIFO gethead failed', strArg:= '');
+	END_IF
+	
+	20:
+	// wait for task done
+	
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="ActingFreeSize" Id="{6108f16d-6303-4da1-8f7c-85f0a9260258}">
+      <Declaration><![CDATA[PROPERTY ActingFreeSize : UDINT]]></Declaration>
+      <Get Name="Get" Id="{aafd9d91-ff31-48be-8124-743badc1b690}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ActingFreeSize := _ActingFreeSize;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ActingTaskCount" Id="{f01ac406-cf0a-446e-8a95-a7caef70797a}">
+      <Declaration><![CDATA[PROPERTY ActingTaskCount : UDINT]]></Declaration>
+      <Get Name="Get" Id="{d79a6075-848a-4b66-81c4-9487bfbd72d1}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ActingTaskCount := _ActingTaskCount;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ActingUsedSize" Id="{cef4fd32-182b-45d2-bd58-6c74d4ddd8a7}">
+      <Declaration><![CDATA[PROPERTY ActingUsedSize : UDINT]]></Declaration>
+      <Get Name="Get" Id="{bff7d192-28d9-459a-9f4a-fac6591f1eba}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ActingUsedSize := _ActingUsedSize;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="AddActingTask" Id="{ead4d9fb-0605-4e56-a3de-1d9e176d4ccb}">
+      <Declaration><![CDATA[METHOD AddActingTask : BOOL
+VAR_INPUT
+	TaskName : STRING(24);
+	TaskType : INT; (* 0:Once, 1:Regular *)
+	pData : PVOID;
+	nData : UDINT;
+END_VAR
+VAR
+	pDynMem : PVOID;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nData > ActingQueue.cbFree THEN
+	ADSLOGSTR(msgCtrlMask:= ADSLOG_MSGTYPE_ERROR OR ADSLOG_MSGTYPE_STRING,
+		msgFmtStr:= 'AddTaskFailed: No free space in FIFO', strArg:= '');
+	RETURN;
+END_IF
+pDynMem := fbMemMan.Alloc(nSize:= nData, bReset:= TRUE);
+IF pDynMem = 0 THEN
+	ADSLOGSTR(msgCtrlMask:= ADSLOG_MSGTYPE_ERROR OR ADSLOG_MSGTYPE_STRING,
+		msgFmtStr:= 'AddTaskFailed: Allocate memory failed', strArg:= '');
+	RETURN;
+END_IF
+MEMCPY(destAddr:= pDynMem, srcAddr:= pData, n:= nData);
+PushTask.TaskName := TaskName;
+PushTask.TaskType := TaskType;
+PushTask.pData := pDynMem;
+PushTask.nData := nData;
+ActingQueue.A_AddTail(pWrite:= ADR(PushTask), cbWrite:= SIZEOF(PushTask), pBuffer:= ADR(ArrActingQueue), cbBuffer:= SIZEOF(ArrActingQueue), 
+	bOk=> AddActingTask, pRead=> , cbRead=> , nCount=> _ActingTaskCount, cbSize=> _ActingUsedSize, cbFree=> _ActingFreeSize);
+IF ActingQueue.bOk THEN
+	AddActingTask := TRUE;
+ELSE
+	ADSLOGSTR(msgCtrlMask:= ADSLOG_MSGTYPE_ERROR OR ADSLOG_MSGTYPE_STRING,
+		msgFmtStr:= 'AddTaskFailed: FIFO addtail failed ', strArg:= '');
+	fbMemMan.Free2(pDynMem);
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="CurrentTask" Id="{2176c508-4949-4be3-9a06-35d1d2643e85}">
+      <Declaration><![CDATA[PROPERTY CurrentTask : ST_TcpTask2]]></Declaration>
+      <Get Name="Get" Id="{238f4669-0147-4545-9236-0b91a5cc7479}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[CurrentTask := PullTask;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="FinishTask" Id="{67998538-cd5e-4705-af6d-0c1e16879265}">
+      <Declaration><![CDATA[METHOD FinishTask : BOOL
+VAR_INPUT
+END_VAR
+VAR
+	pDynMem : PVOID;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[(* 调用freehead，释放FIFO头，判断释放是否成功 *)
+ActingQueue.A_FreeHead(pWrite:= , cbWrite:= , pBuffer:= ADR(ArrActingQueue), cbBuffer:= SIZEOF(ArrActingQueue), 
+	bOk=> , pRead=> , cbRead=> , nCount=> _ActingTaskCount, cbSize=> _ActingUsedSize, cbFree=> _ActingFreeSize);
+IF ActingQueue.bOk THEN
+	IF ActingQueue.nCount <> 0 THEN
+		StepTaskConsume := 10;
+	ELSE
+		StepTaskConsume := 0;
+	END_IF
+ELSE
+	ADSLOGSTR(msgCtrlMask:= ADSLOG_MSGTYPE_ERROR OR ADSLOG_MSGTYPE_STRING,
+		msgFmtStr:= 'FinishTaskFailed: FIFO freehead failed', strArg:= '');
+	RETURN;
+END_IF
+
+FinishTask := TRUE;
+pDynMem := PullTask.pData;
+PullTask := EmptyTask;
+//MEMCPY(destAddr:= ADR(PullTask), srcAddr:= ADR(EmptyTask), n:= SIZEOF(PullTask));
+fbMemMan.Free2(pDynMem);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="NoTaskToConsume" Id="{c7281fd7-c02b-40c3-804c-f1084ecb540f}">
+      <Declaration><![CDATA[PROPERTY NoTaskToConsume : BOOL]]></Declaration>
+      <Get Name="Get" Id="{66790a2b-15bc-4a4e-86ce-7e593bf9cd36}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[NoTaskToConsume := _NoTaskToConsume;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="WaitingForTaskDone" Id="{0c04d911-fb97-497a-b054-fe8761c5ac32}">
+      <Declaration><![CDATA[PROPERTY WaitingForTaskDone : BOOL]]></Declaration>
+      <Get Name="Get" Id="{e3247a19-a380-49b3-9cfe-5f4eebfc6adb}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[WaitingForTaskDone := _WaitingForTaskDone;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <LineIds Name="FB_SimpleTcpTaskQueue2">
+      <LineId Id="149" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SimpleTcpTaskQueue2._CyclicLogic">
+      <LineId Id="33" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="6" Count="1" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="8" Count="14" />
+      <LineId Id="36" Count="1" />
+      <LineId Id="23" Count="4" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SimpleTcpTaskQueue2.ActingFreeSize.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SimpleTcpTaskQueue2.ActingTaskCount.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SimpleTcpTaskQueue2.ActingUsedSize.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SimpleTcpTaskQueue2.AddActingTask">
+      <LineId Id="44" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="46" Count="1" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="59" Count="1" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="38" Count="2" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="63" Count="1" />
+      <LineId Id="68" Count="3" />
+      <LineId Id="65" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SimpleTcpTaskQueue2.CurrentTask.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SimpleTcpTaskQueue2.FinishTask">
+      <LineId Id="38" Count="0" />
+      <LineId Id="6" Count="2" />
+      <LineId Id="15" Count="1" />
+      <LineId Id="18" Count="1" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="35" Count="1" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="33" Count="1" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="28" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SimpleTcpTaskQueue2.NoTaskToConsume.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SimpleTcpTaskQueue2.WaitingForTaskDone.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

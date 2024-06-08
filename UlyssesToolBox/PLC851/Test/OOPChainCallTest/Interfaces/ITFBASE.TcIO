@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="ITFBASE" Id="{14fbdfaf-b624-4bbf-a708-c6ee21e1b662}">
+    <Declaration><![CDATA[INTERFACE ITFBASE EXTENDS I_ITF1
+]]></Declaration>
+  </Itf>
+</TcPlcObject>

@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="stSktPara" Id="{86aacd67-b4f9-4f5f-b9f3-26c3e38e3f78}">
+    <Declaration><![CDATA[TYPE stSktPara :
+STRUCT
+	AutoReconnect : BOOL;
+	EnableSendLog : BOOL;
+	EnableRecvLog : BOOL;
+	SendRecvTimeOut : TIME := T#3S;
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

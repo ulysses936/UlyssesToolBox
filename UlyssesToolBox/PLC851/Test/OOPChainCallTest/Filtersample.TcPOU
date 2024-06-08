@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="Filtersample" Id="{41f9b86b-a8e4-419b-84f6-e2bb7e5b82de}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK Filtersample IMPLEMENTS ITFBASE
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="Clear" Id="{87982b53-d10a-479d-b733-38c8cc0d07f0}">
+      <Declaration><![CDATA[METHOD Clear : I_ITF1
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="METH1" Id="{46144ff5-86f6-43ed-9b50-6b1cc14274d3}">
+      <Declaration><![CDATA[METHOD METH1 : I_ITF1
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Prop1" Id="{17347acb-1eb9-4a92-b800-3b0cee382971}">
+      <Declaration><![CDATA[PROPERTY Prop1 : I_ITF2]]></Declaration>
+      <Get Name="Get" Id="{52b08e44-6b29-4faf-870e-56fd857ed7b7}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{f9b49df6-5433-44b2-8495-2a24e73748e6}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <LineIds Name="Filtersample">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="Filtersample.Clear">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="Filtersample.METH1">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="Filtersample.Prop1.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="Filtersample.Prop1.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

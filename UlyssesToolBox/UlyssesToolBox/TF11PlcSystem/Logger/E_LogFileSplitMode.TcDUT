@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_LogFileSplitMode" Id="{e7fa8879-9a0e-44a2-9751-19cd18b081ab}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_LogFileSplitMode :
+(
+	eDontSplit := 0,
+	eSplitByDay := 1,
+	eSplitByHour := 2
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

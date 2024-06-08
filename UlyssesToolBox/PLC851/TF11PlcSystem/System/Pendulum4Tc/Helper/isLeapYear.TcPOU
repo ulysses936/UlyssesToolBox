@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="isLeapYear" Id="{5346f763-5f48-48df-8278-4883b2ab8214}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION isLeapYear : BOOL
+VAR_INPUT
+	Year : DINT;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[isLeapYear := (year mod 4 = 0) and ((year mod 100 <> 0) or (year mod 400 = 0));]]></ST>
+    </Implementation>
+    <LineIds Name="isLeapYear">
+      <LineId Id="7" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

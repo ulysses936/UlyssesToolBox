@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="Pendulum4Tc" Id="{389aeec2-3812-4b10-b54b-74a0ddd517e9}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK Pendulum4Tc
+VAR_INPUT
+	TimeSourceDateTime : I_PtTimesource;
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	_DateTime : PtDateTime;
+	_Interval : PtInterval;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+_DateTime := TimeSourceDateTime.getDateTime();]]></ST>
+    </Implementation>
+    <Method Name="New" Id="{b29080d0-326d-4115-90bf-7e78d5b49af3}">
+      <Declaration><![CDATA[METHOD New : PtDateTime
+VAR_INPUT
+	Year : DINT;
+	Month : DINT;
+	Day : DINT;
+	Hour : DINT;
+	Minute : DINT;
+	Second : DINT;
+	Microsecond : DINT;
+	TimeZone : DINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[New.Set(
+	Year:= Year, 
+	Month:= Month, 
+	Day:= Day, 
+	Hour:= Hour, 
+	Minute:= Minute, 
+	Second:= Second, 
+	Microsecond:= Microsecond, 
+	TimeZone:= TimeZone);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Now" Id="{9ea9f490-84f7-4f1c-bd09-f76b4ad6f29b}">
+      <Declaration><![CDATA[METHOD Now : PtDateTime
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Now := _DateTime;]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="Pendulum4Tc">
+      <LineId Id="45" Count="0" />
+      <LineId Id="28" Count="0" />
+    </LineIds>
+    <LineIds Name="Pendulum4Tc.New">
+      <LineId Id="14" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="15" Count="5" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="Pendulum4Tc.Now">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
